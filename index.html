@@ -3,119 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code / Barcode 智慧系統</title>
+    <title>QR Code 智慧系統 (圖片匯出版)</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <style>
         :root {
             --primary-color: #007bff;
             --bg-color: #f0f2f5;
         }
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); padding: 20px; text-align: center; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); padding: 10px; text-align: center; margin: 0; }
         
-        /* 標題與控制區 */
-        header { margin-bottom: 20px; position: relative; }
-        h2 { color: #333; margin-bottom: 15px; cursor: pointer; }
+        header { 
+            display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; position: relative;
+        }
+        
+        h2 { color: #333; margin: 10px 0 20px 0; font-size: 1.5rem; width: 100%; }
 
         /* 設定按鈕 (右上角) */
         .settings-icon {
-            position: absolute;
-            top: 0;
-            right: 0;
-            font-size: 24px;
-            cursor: pointer;
-            background: #fff;
-            padding: 5px 10px;
-            border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer;
+            background: #fff; padding: 5px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100;
         }
 
-        /* 掃描器區域 */
-        #reader-container {
-            position: relative;
-            max-width: 500px;
-            margin: 0 auto;
-            display: none;
+        /* 相機區域 */
+        #camera-wrapper {
+            width: 100%; max-width: 500px; margin-bottom: 15px; display: none; position: relative;
         }
-        #reader { width: 100%; border: 5px solid #333; cursor: pointer; }
+        #reader { width: 100%; border: 4px solid #333; border-radius: 8px; cursor: pointer; background: #000; }
         .camera-hint {
-            position: absolute;
-            bottom: 10px;
-            left: 0;
-            right: 0;
-            color: white;
-            background: rgba(0,0,0,0.6);
-            padding: 5px;
-            font-size: 12px;
-            pointer-events: none;
+            position: absolute; bottom: 5px; left: 0; right: 0; color: white; background: rgba(0,0,0,0.6);
+            padding: 5px; font-size: 12px; pointer-events: none;
         }
-        #ocr-status { margin: 10px 0; color: #d63384; font-weight: bold; min-height: 24px;}
+        #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; }
 
-        /* 按鈕樣式 */
-        .btn-group { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        /* --- 修改重點 1：按鈕改為 2欄一行 + 正方形 --- */
+        .btn-group { 
+            display: grid; /* 使用網格佈局 */
+            grid-template-columns: 1fr 1fr; /* 分成兩欄，寬度各半 */
+            gap: 10px; /* 按鈕間距 */
+            width: 100%;
+            max-width: 500px; /* 限制最大寬度，避免電腦版按鈕太大 */
+            margin: 0 auto 20px auto;
+        }
+        
         button {
-            padding: 10px 20px;
+            width: 100%;
+            aspect-ratio: 1 / 1; /* 設定長寬比為 1:1 (正方形) */
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 16px;
             color: white;
             font-weight: bold;
-            transition: 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            
+            /* 讓文字與圖示垂直置中 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            line-height: 1.5;
         }
+        
+        /* 增加按鈕內的 Emoji 大小 */
+        button span.icon { font-size: 24px; display: block; margin-bottom: 5px; }
+
         .btn-scan { background-color: #007bff; }
         .btn-ocr { background-color: #ffc107; color: #333; }
         .btn-excel { background-color: #17a2b8; }
-        .btn-gen { background-color: #28a745; }
         .btn-clear { background-color: #dc3545; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:active { transform: scale(0.98); }
 
         /* 格位排版 */
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
             max-width: 1200px;
             margin: 0 auto;
+            padding-bottom: 50px;
         }
 
         .grid-item {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 1px solid #e1e1e1;
+            background: white; padding: 10px; border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #e1e1e1;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        .grid-label { font-size: 14px; color: #888; margin-bottom: 5px; align-self: flex-start; }
+        .grid-label { font-size: 12px; color: #888; margin-bottom: 5px; align-self: flex-start; }
         input {
-            width: 100%; padding: 8px; border: 1px solid #ccc;
-            border-radius: 4px; box-sizing: border-box; margin-bottom: 10px;
+            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+            box-sizing: border-box; margin-bottom: 5px; font-size: 16px;
         }
 
-        /* 條碼/QR 顯示區 */
+        /* 條碼顯示區 */
         .code-display-area {
-            width: 100%;
-            height: 140px;
-            background-color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 10px;
-            border: 1px dashed #ddd; 
-            cursor: pointer; /* 提示可點擊 */
-            overflow: hidden;
-            position: relative;
+            width: 100%; height: 120px; background-color: #fff;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 5px; border: 1px dashed #ddd; cursor: pointer;
+            overflow: hidden; position: relative;
         }
-        .code-display-area:hover { background-color: #f9f9f9; border-color: #bbb; }
         .code-display-area img, .code-display-area svg { max-width: 95%; max-height: 95%; }
         
         .toggle-hint {
@@ -123,103 +117,84 @@
         }
 
         .qr-text-info {
-            font-size: 14px; color: #333; word-break: break-all;
-            background: #eef; padding: 5px; border-radius: 4px; width: 100%;
+            font-size: 13px; color: #333; word-break: break-all;
+            background: #eef; padding: 4px; border-radius: 4px; width: 100%; min-height: 18px;
         }
 
-        /* 設定視窗 (Modal) */
-        .modal {
-            display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        .modal-content {
-            background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888;
-            width: 90%; max-width: 400px; border-radius: 8px; text-align: left;
-        }
-        .modal-content h3 { margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input { width: 100%; }
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; }
         .modal-footer { text-align: right; margin-top: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group input { width: 100%; padding: 8px; }
 
     </style>
 </head>
 <body>
 
-    <div class="settings-icon" onclick="openSettings()">⚙️ 設定</div>
+    <div class="settings-icon" onclick="openSettings()">⚙️</div>
 
     <header>
-        <h2 id="app-title">12格 QR Code 產生與掃描器</h2>
+        <h2 id="app-title">QR Code 智慧系統</h2>
         
-        <div class="btn-group">
-            <button class="btn-scan" onclick="startQRScan()">📸 掃描 (10秒自動停)</button>
-            <button class="btn-ocr" onclick="triggerOCRFile()">📄 圖片 OCR</button>
-            <button class="btn-excel" onclick="exportExcel()">📊 轉出 EXCEL</button>
-            <button class="btn-clear" onclick="clearAll()">🗑️ 清除全部</button>
-            <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
+        <div id="camera-wrapper">
+            <div id="reader"></div>
+            <div class="camera-hint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
         </div>
-        
         <div id="ocr-status"></div>
-        
-        <div id="reader-container">
-            <div id="reader" title="點擊畫面進行拍照辨識"></div>
-            <div class="camera-hint">👆 點擊畫面：拍照並進行文字辨識</div>
+
+        <div class="btn-group">
+            <button class="btn-scan" onclick="startQRScan()">
+                <span class="icon">📸</span>掃描 (10s)
+            </button>
+            <button class="btn-ocr" onclick="triggerOCRFile()">
+                <span class="icon">📄</span>圖片 OCR
+            </button>
+            <button class="btn-excel" onclick="exportExcelWithImages()">
+                <span class="icon">📊</span>轉出 EXCEL<br>(含圖片)
+            </button>
+            <button class="btn-clear" onclick="clearAll()">
+                <span class="icon">🗑️</span>清除全部
+            </button>
+            <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
         </div>
     </header>
 
-    <div class="grid-container" id="main-grid">
-        </div>
+    <div class="grid-container" id="main-grid"></div>
 
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <h3>系統設定</h3>
             <div class="form-group">
                 <label>主標題名稱：</label>
-                <input type="text" id="set-title" value="12格 QR Code 產生與掃描器">
+                <input type="text" id="set-title">
             </div>
             <div class="form-group">
                 <label>QR Code 格數設定：</label>
-                <input type="number" id="set-count" value="12" min="1" max="100">
-            </div>
-            <div class="form-group">
-                <label>Excel 字體大小 (僅影響顯示/備註)：</label>
-                <input type="number" id="set-font-size" value="12">
+                <input type="number" id="set-count" min="1" max="100">
             </div>
             <div class="modal-footer">
-                <button onclick="saveSettings()" class="btn-gen">💾 儲存並重置</button>
-                <button onclick="closeSettings()" class="btn-clear">取消</button>
+                <button onclick="saveSettings()" style="background-color:#28a745; color:white; padding:8px 15px; border:none; border-radius:4px;">儲存</button>
+                <button onclick="closeSettings()" style="background-color:#6c757d; color:white; padding:8px 15px; border:none; border-radius:4px;">取消</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 全域變數與設定 ---
-        let appConfig = {
-            title: "12格 QR Code 產生與掃描器",
-            gridCount: 12,
-            fontSize: 12
-        };
-        
+        let appConfig = { title: "QR Code 智慧系統", gridCount: 12, fontSize: 12 };
         let html5QrCode;
-        let scanTimeout; // 用於 10 秒自動停止
-        let codeModes = {}; // 紀錄每一格目前的模式 'qr' 或 'barcode'
+        let scanTimeout; 
+        let codeModes = {}; 
 
-        // 初始化
-        window.onload = function() {
-            loadConfig();
-            initGrid();
-        };
+        window.onload = function() { loadConfig(); initGrid(); };
 
-        // --- 1. 格位與介面生成 ---
         function initGrid() {
             const gridContainer = document.getElementById('main-grid');
-            gridContainer.innerHTML = ""; // 清空
+            gridContainer.innerHTML = ""; 
             document.getElementById('app-title').innerText = appConfig.title;
 
             for (let i = 1; i <= appConfig.gridCount; i++) {
-                // 預設模式為 QR
                 if (!codeModes[i]) codeModes[i] = 'qr';
-
                 let itemDiv = document.createElement('div');
                 itemDiv.className = 'grid-item';
 
@@ -230,27 +205,23 @@
                 let input = document.createElement('input');
                 input.type = 'text';
                 input.id = 'data-' + i;
-                input.placeholder = '輸入資料...';
+                input.placeholder = '待輸入...';
                 input.onkeyup = function() { generateSingleCode(i); };
 
-                // 顯示區域 (QR 或 Barcode)
                 let codeDiv = document.createElement('div');
                 codeDiv.id = 'code-container-' + i;
                 codeDiv.className = 'code-display-area';
-                codeDiv.onclick = function() { toggleCodeType(i); }; // 點擊切換功能
+                codeDiv.onclick = function() { toggleCodeType(i); };
                 
-                // 提示文字
                 let hint = document.createElement('span');
                 hint.className = 'toggle-hint';
-                hint.innerText = '點擊切換';
+                hint.innerText = '切換';
                 codeDiv.appendChild(hint);
 
-                // 內容容器 (img 或 svg)
                 let imgContent = document.createElement('div');
-                imgContent.id = 'code-img-' + i;
+                imgContent.id = 'code-img-' + i; // 這裡放圖片
                 codeDiv.appendChild(imgContent);
 
-                // 下方文字
                 let textDiv = document.createElement('div');
                 textDiv.id = 'text-info-' + i;
                 textDiv.className = 'qr-text-info';
@@ -263,239 +234,227 @@
             }
         }
 
-        // --- 2. 條碼/QR 產生邏輯 ---
         function generateSingleCode(index) {
             let inputVal = document.getElementById('data-' + index).value.trim();
             let container = document.getElementById('code-img-' + index);
             let textContainer = document.getElementById('text-info-' + index);
             
-            container.innerHTML = ""; // 清空
+            container.innerHTML = ""; 
             textContainer.innerText = inputVal;
 
-            if (inputVal === "") {
-                container.innerText = "(無資料)";
-                return;
-            }
+            if (inputVal === "") { container.innerText = "(空)"; return; }
 
-            // 依據目前模式產生
             if (codeModes[index] === 'qr') {
-                // 產生 QR Code
                 new QRCode(container, {
                     text: inputVal,
-                    width: 120,
-                    height: 120,
+                    width: 100,
+                    height: 100,
                     colorDark : "#000000",
                     colorLight : "#ffffff",
                     correctLevel : QRCode.CorrectLevel.M
                 });
             } else {
-                // 產生 Barcode
                 let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
                 container.appendChild(svg);
                 try {
-                    JsBarcode(svg, inputVal, {
-                        format: "CODE128",
-                        width: 2,
-                        height: 50,
-                        displayValue: false // 下方已經有文字框了，這裡不顯示
-                    });
-                } catch (e) {
-                    container.innerText = "無法產生條碼(格式錯誤)";
+                    JsBarcode(svg, inputVal, { format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0 });
+                } catch (e) { container.innerText = "格式錯誤"; }
+            }
+        }
+
+        function fillData(text) {
+            let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
+            let filledCount = 0;
+            for (let part of parts) {
+                let placed = false;
+                for (let i = 1; i <= appConfig.gridCount; i++) {
+                    let input = document.getElementById('data-' + i);
+                    if (input.value.trim() === "") {
+                        input.value = part;
+                        generateSingleCode(i);
+                        placed = true;
+                        filledCount++;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    alert("⚠️ 欄位已滿！資料 (" + part + ") 無法填入。");
+                    return;
                 }
             }
         }
 
-        // 點擊切換 QR / Barcode
+        // --- 重點功能：Excel 匯出 (含圖片) ---
+        async function exportExcelWithImages() {
+            // 檢查是否有資料
+            let hasData = false;
+            for(let i=1; i<=appConfig.gridCount; i++){
+                if(document.getElementById('data-'+i).value.trim() !== "") hasData = true;
+            }
+            if(!hasData) { alert("目前沒有資料可以匯出！"); return; }
+
+            const statusDiv = document.getElementById('ocr-status');
+            statusDiv.innerText = "⏳ 正在產生 Excel (含圖片)，請稍候...";
+
+            // 建立 Workbook
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('QR Codes');
+
+            // 設定欄位寬度
+            worksheet.getColumn(1).width = 25; // A欄寬度 (放圖和文)
+            worksheet.getColumn(2).width = 15; // B欄寬度 (格位編號，備用)
+
+            // 表頭
+            worksheet.getCell('A1').value = "QR Code & 資料內容";
+            worksheet.getCell('A1').font = { bold: true, size: 14 };
+            
+            let currentRow = 2; // 從第2列開始
+
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                let val = document.getElementById('data-' + i).value.trim();
+                
+                // 只有當格子有資料時才匯出
+                if (val !== "") {
+                    // 1. 設定高度 (給圖片用)
+                    worksheet.getRow(currentRow).height = 100; 
+
+                    // 2. 抓取圖片 Base64
+                    let imgContainer = document.querySelector('#code-img-' + i + ' img');
+                    let canvasContainer = document.querySelector('#code-img-' + i + ' canvas');
+                    let base64Image = null;
+
+                    if (imgContainer) {
+                        base64Image = imgContainer.src;
+                    } else if (canvasContainer) {
+                        base64Image = canvasContainer.toDataURL();
+                    }
+
+                    // 3. 如果有圖片，加入 Excel
+                    if (base64Image && codeModes[i] === 'qr') {
+                        const imageId = workbook.addImage({
+                            base64: base64Image,
+                            extension: 'png',
+                        });
+
+                        // 圖片放在目前列 (currentRow) 的 A欄
+                        worksheet.addImage(imageId, {
+                            tl: { col: 0, row: currentRow - 1 }, // 注意：row index 從 0 開始
+                            ext: { width: 100, height: 100 }
+                        });
+                    } else {
+                        // 如果是條碼或純文字，直接寫入文字代表
+                         worksheet.getCell('A' + currentRow).value = "[條碼/無圖]";
+                    }
+
+                    // 4. 下一列放資料文字 (在圖片下方)
+                    let textRow = currentRow + 1;
+                    worksheet.getRow(textRow).height = 25; // 文字列高度
+                    let cell = worksheet.getCell('A' + textRow);
+                    cell.value = val;
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    cell.font = { size: 12, bold: true };
+
+                    // 畫框線 (圖跟文一組)
+                    worksheet.getCell('A' + currentRow).border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+                    worksheet.getCell('A' + textRow).border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+
+                    // 跳過兩列 (圖片列 + 文字列) 準備下一個
+                    currentRow += 2;
+                }
+            }
+
+            // 匯出檔案
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            saveAs(blob, "QRCode_Data_With_Images.xlsx");
+            
+            statusDiv.innerText = "✅ Excel 下載完成！";
+        }
+
+        // --- 輔助功能 ---
         function toggleCodeType(index) {
             let current = codeModes[index];
             codeModes[index] = (current === 'qr') ? 'barcode' : 'qr';
-            generateSingleCode(index); // 重新產生
+            generateSingleCode(index);
         }
 
-        // --- 3. 相機與掃描邏輯 ---
         function startQRScan() {
-            const readerDiv = document.getElementById('reader-container');
-            readerDiv.style.display = "block";
-            document.getElementById('ocr-status').innerText = "相機已啟動 - 10秒後自動關閉";
-
+            const wrapper = document.getElementById('camera-wrapper');
+            wrapper.style.display = "block";
+            document.getElementById('ocr-status').innerText = "相機啟動中... (10秒自動關閉)";
             html5QrCode = new Html5Qrcode("reader");
-
-            // 重置計時器
             resetScanTimer();
-
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
                 (decodedText) => {
-                    // 掃描到 QR Code
-                    console.log(`Scan result: ${decodedText}`);
-                    fillData(decodedText);
-                    stopScan();
-                    alert("QR Code 掃描成功！");
-                },
-                (errorMessage) => { 
-                    // 掃描中...不動作
-                }
+                    fillData(decodedText); 
+                    resetScanTimer();
+                    document.getElementById('ocr-status').innerText = "✅ 已填入: " + decodedText;
+                }, () => {}
             ).then(() => {
-                // 相機啟動成功後，加入點擊事件 (針對 capture)
-                // 由於 html5-qrcode 封裝了 video，我們需要加上點擊監聽
                 setTimeout(() => {
                     let videoElement = document.querySelector("#reader video");
-                    if(videoElement) {
-                        videoElement.onclick = function() {
-                            captureAndOCR(videoElement);
-                        };
-                    }
-                }, 1000); // 延遲一下確保 video 元素已生成
-            }).catch(err => {
-                alert("無法啟動相機：" + err);
-            });
+                    if(videoElement) videoElement.onclick = function() { captureAndOCR(videoElement); };
+                }, 1000);
+            }).catch(err => { alert("無法啟動相機：" + err); wrapper.style.display = "none"; });
         }
 
         function stopScan() {
             if(html5QrCode) {
                 html5QrCode.stop().then(() => {
-                    document.getElementById('reader-container').style.display = "none";
+                    document.getElementById('camera-wrapper').style.display = "none";
                     clearTimeout(scanTimeout);
-                    document.getElementById('ocr-status').innerText = "";
                 }).catch(err => console.log(err));
             }
         }
-
-        // 10秒自動關閉邏輯
         function resetScanTimer() {
             if(scanTimeout) clearTimeout(scanTimeout);
-            scanTimeout = setTimeout(() => {
-                stopScan();
-                document.getElementById('ocr-status').innerText = "💤 相機閒置超過 10 秒，已自動關閉";
-            }, 10000); // 10000 ms = 10 sec
+            scanTimeout = setTimeout(() => { stopScan(); document.getElementById('ocr-status').innerText = "💤 相機關閉"; }, 10000);
         }
 
-        // --- 4. 點擊畫面拍照 OCR ---
         function captureAndOCR(video) {
-            // 視覺回饋
-            video.style.opacity = "0.5";
-            setTimeout(() => video.style.opacity = "1", 200);
-
-            // 1. 建立 Canvas 擷取畫面
             let canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            let ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // 2. 轉為圖片並執行 OCR
-            document.getElementById('ocr-status').innerText = "⏳ 正在辨識影像文字...";
-            
-            // 停止相機 (模擬拍照完成)
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0);
+            document.getElementById('ocr-status').innerText = "⏳ 正在辨識...";
             stopScan(); 
-
-            // 執行 Tesseract
-            Tesseract.recognize(
-                canvas.toDataURL('image/png'),
-                'eng+chi_tra',
-                { logger: m => console.log(m) }
-            ).then(({ data: { text } }) => {
-                document.getElementById('ocr-status').innerText = "✅ 拍照辨識完成！";
-                let cleanedText = text.replace(/,/g, " "); 
-                fillData(cleanedText);
+            Tesseract.recognize(canvas.toDataURL('image/png'), 'eng+chi_tra').then(({ data: { text } }) => {
+                document.getElementById('ocr-status').innerText = "✅ 辨識完成";
+                fillData(text.replace(/,/g, " "));
             });
         }
-
-        function triggerOCRFile() {
-            document.getElementById('ocr-file-input').click();
-        }
-
+        function triggerOCRFile() { document.getElementById('ocr-file-input').click(); }
         function processOCRFile(input) {
             if (input.files && input.files[0]) {
-                document.getElementById('ocr-status').innerText = "⏳ 讀取圖片中...";
-                Tesseract.recognize(
-                    input.files[0],
-                    'eng+chi_tra'
-                ).then(({ data: { text } }) => {
-                    document.getElementById('ocr-status').innerText = "✅ 辨識完成";
-                    let cleanedText = text.replace(/,/g, " ");
-                    fillData(cleanedText);
+                document.getElementById('ocr-status').innerText = "⏳ 讀取中...";
+                Tesseract.recognize(input.files[0], 'eng+chi_tra').then(({ data: { text } }) => {
+                    document.getElementById('ocr-status').innerText = "✅ 完成";
+                    fillData(text.replace(/,/g, " "));
                 });
             }
         }
-
-        // --- 5. 資料填充 ---
-        function fillData(text) {
-            // 使用空白、逗號、換行切割
-            let parts = text.split(/[\s,]+/).filter(item => item.length > 0);
-            
-            for (let i = 0; i < appConfig.gridCount; i++) {
-                let inputField = document.getElementById('data-' + (i + 1));
-                if (inputField) {
-                    if (parts[i]) {
-                        inputField.value = parts[i];
-                    }
-                    generateSingleCode(i + 1); // 立即更新圖碼
-                }
-            }
-        }
-
-        // --- 6. Excel 匯出 ---
-        function exportExcel() {
-            let data = [];
-            // 表頭
-            data.push(["格位編號", "資料內容", "備註"]);
-
-            for (let i = 1; i <= appConfig.gridCount; i++) {
-                let val = document.getElementById('data-' + i).value;
-                data.push(["格位 " + i, val, ""]);
-            }
-
-            // 建立工作表
-            let ws = XLSX.utils.aoa_to_sheet(data);
-            let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "QR Data");
-
-            // 匯出
-            XLSX.writeFile(wb, "QRCode_Data.xlsx");
-        }
-
         function clearAll() {
+            if(!confirm("確定清除全部？")) return;
             for (let i = 1; i <= appConfig.gridCount; i++) {
-                let input = document.getElementById('data-' + i);
-                if(input) {
-                    input.value = "";
-                    generateSingleCode(i);
-                }
+                document.getElementById('data-' + i).value = "";
+                generateSingleCode(i);
             }
-            document.getElementById('ocr-status').innerText = "";
         }
-
-        // --- 7. 設定功能 ---
         function openSettings() {
             document.getElementById('set-title').value = appConfig.title;
             document.getElementById('set-count').value = appConfig.gridCount;
-            document.getElementById('set-font-size').value = appConfig.fontSize;
             document.getElementById('settingsModal').style.display = "block";
         }
-
-        function closeSettings() {
-            document.getElementById('settingsModal').style.display = "none";
-        }
-
+        function closeSettings() { document.getElementById('settingsModal').style.display = "none"; }
         function saveSettings() {
             appConfig.title = document.getElementById('set-title').value;
-            let count = parseInt(document.getElementById('set-count').value);
-            if(count > 0) appConfig.gridCount = count;
-            appConfig.fontSize = document.getElementById('set-font-size').value;
-
-            // 儲存並重繪
+            appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 12;
             localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
             initGrid();
             closeSettings();
         }
-
         function loadConfig() {
             let saved = localStorage.getItem('qrAppConfig');
-            if (saved) {
-                appConfig = JSON.parse(saved);
-            }
+            if (saved) appConfig = JSON.parse(saved);
         }
     </script>
 </body>
