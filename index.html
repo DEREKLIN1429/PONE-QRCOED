@@ -505,35 +505,31 @@
         };
 
         // --- 欄寬與列高設定 ---
-        // 變更邏輯：左側增加一欄，所以每個 QR Code 前面都有一個 Spacer
-        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 0.58; // 左側間隔
-        let mainColWidth = parseFloat(appConfig.excelQrSize.col) || 15; // 主要內容寬度
+        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 0.58; 
+        let mainColWidth = parseFloat(appConfig.excelQrSize.col) || 15; 
 
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
-            colsConfig.push({ width: spacerW }); // 左側間隔欄
-            colsConfig.push({ width: mainColWidth }); // QR 內容欄
+            colsConfig.push({ width: spacerW }); 
+            colsConfig.push({ width: mainColWidth }); 
         }
         worksheet.columns = colsConfig;
 
         // --- 圖片與格位參數 ---
-        const IMG_H = parseFloat(appConfig.excelQrSize.row) || 70; // Excel 列高 (points)
-        const TXT_H = 15; // 文字列高
-        const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 7; // 列間隔
+        const IMG_H = parseFloat(appConfig.excelQrSize.row) || 70; 
+        const TXT_H = 15; 
+        const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 7; 
         
-        // QR Code 圖片在 Excel 內的目標顯示尺寸 (像素)
-        // 欄寬 15 (約110px) 與 列高 70 (約93px)
-        // 設定圖片大小為 75px (約2cm) 以確保能放入並置中
+        // QR Code 圖片在 Excel 內的目標顯示尺寸
         const QR_TARGET_SIZE = 75; 
 
-        // --- 置中計算核心 (針對欄寬 15 優化) ---
-        // Excel 寬度單位轉像素 (通用公式: Width * 7 + 5)
-        const cellPxW = Math.floor((mainColWidth * 7.0) + 5); 
+        // --- 置中計算核心 (修正像素換算公式) ---
+        // 修正：增加欄寬係數 7.3 (比 7.0 稍大)，讓計算出的格子寬度變寬
+        // 這樣 OffX (左邊距) 會變大，將圖片稍微往右推，達到置中效果
+        const cellPxW = Math.floor((mainColWidth * 7.3) + 5); 
         
-        // Excel 高度單位 (Points) 轉像素 (1 pt = 1.333 px)
         const cellPxH = Math.floor(IMG_H * 1.333);
 
-        // 計算偏移量 (EMU 單位, 1px = 9525 EMUs)
         const emuPerPx = 9525;
         const offX_Px = Math.max(0, (cellPxW - QR_TARGET_SIZE) / 2);
         const offY_Px = Math.max(0, (cellPxH - QR_TARGET_SIZE) / 2);
@@ -548,9 +544,6 @@
             if (val !== "") {
                 let colGridIndex = validItemIndex % printCols; 
                 let rowGridIndex = Math.floor(validItemIndex / printCols);
-                
-                // 索引修正：每個物件佔用 2 欄 (Spacer, Content)
-                // 內容位於偶數索引 (0-based 1, 3, 5...) 即 ExcelJS (1-based 2, 4, 6...)
                 let excelColIndex = (colGridIndex * 2) + 2; 
 
                 let imgRowNumber = 2 + (rowGridIndex * 3); 
@@ -573,8 +566,6 @@
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     
-                    // 使用 tl (top-left) 定位並加上偏移量
-                    // 注意：col 設定為 excelColIndex - 1 (因為 tl 是 0-based)
                     worksheet.addImage(imageId, {
                         tl: { col: excelColIndex - 1, row: imgRowNumber - 1, nativeColOff: offX_EMU, nativeRowOff: offY_EMU },
                         ext: { width: QR_TARGET_SIZE, height: QR_TARGET_SIZE }, 
@@ -586,13 +577,14 @@
                     cell.alignment = { vertical: 'middle', horizontal: 'center' };
                 }
 
-                // 設定文字
+                // 設定文字 (修正為靠左排列，並縮排)
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex);
                 textCell.value = val;
-                textCell.alignment = { vertical: 'top', horizontal: 'center', wrapText: true }; 
+                // horizontal: 'left', indent: 1 (增加可讀性)
+                textCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true, indent: 1 }; 
                 textCell.font = { size: appConfig.excelFontSize, bold: true, name: 'Arial' };
 
-                // 設定框線 (圖片格下方不畫線，文字格上方不畫線)
+                // 設定框線
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex);
                 imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'none'}, right: {style:'thin'} }; 
                 textCell.border = { top: {style:'none'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; 
