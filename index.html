@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (完美列印版)</title>
+    <title>QR Code 智慧系統 (邊距設定版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -75,22 +75,18 @@
         /* 設定面板 */
         .print-settings-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
         .setting-group { margin-bottom: 15px; text-align: left; }
-        .setting-group label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; }
+        .setting-group label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; font-weight: bold;}
         .setting-group select, .setting-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box;}
         
-        /* 手動輸入區塊 (修正) */
         .custom-size-group { display: flex; gap: 5px; margin-top: 5px; align-items: center; }
         .custom-size-group input { width: 35%; }
         .custom-size-group select { width: 30%; background-color: #f9f9f9; }
 
-        .preview-box { border: 1px solid #ccc; background: #fff; padding: 10px; margin-top: 20px; text-align: center; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .preview-paper {
-            border: 2px solid #333; background: #fff;
-            display: grid; gap: 2px; padding: 2px; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            transition: all 0.2s; box-sizing: border-box;
-        }
-        .preview-cell { background: #e0e0e0; border: 1px solid #999; }
-        .preview-info { font-size: 12px; color: #666; margin-top: 10px; }
+        /* 邊距輸入區 */
+        .margin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 5px; }
+        .margin-input-wrapper { display: flex; align-items: center; }
+        .margin-input-wrapper span { width: 20px; font-size: 12px; color: #888; }
+        .margin-input-wrapper input { flex: 1; }
 
         /* Modal */
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
@@ -145,9 +141,9 @@
             </select>
             
             <div id="custom-size-inputs" class="custom-size-group" style="display:none;">
-                <input type="number" id="custom-width" placeholder="寬" value="100" oninput="updatePreview()">
-                <input type="number" id="custom-height" placeholder="高" value="150" oninput="updatePreview()">
-                <select id="custom-unit" onchange="updatePreview()">
+                <input type="number" id="custom-width" placeholder="寬" value="100">
+                <input type="number" id="custom-height" placeholder="高" value="150">
+                <select id="custom-unit">
                     <option value="mm">mm</option>
                     <option value="in">inch</option>
                 </select>
@@ -156,7 +152,7 @@
 
         <div class="setting-group">
             <label>方向 (Orientation)</label>
-            <select id="print-orientation" onchange="updatePreview()">
+            <select id="print-orientation">
                 <option value="portrait">直向 (Portrait)</option>
                 <option value="landscape">橫向 (Landscape)</option>
             </select>
@@ -164,7 +160,7 @@
 
         <div class="setting-group">
             <label>每行欄數 (Columns)</label>
-            <select id="print-cols" onchange="updatePreview()">
+            <select id="print-cols">
                 <option value="3">3 欄</option>
                 <option value="4">4 欄</option>
                 <option value="5">5 欄</option>
@@ -174,23 +170,34 @@
         </div>
 
         <div class="setting-group">
-            <label>邊距模式 (Margins)</label>
-            <select id="print-margins" onchange="updatePreview()">
-                <option value="normal">標準 (Normal)</option>
-                <option value="narrow">窄邊界 (Narrow)</option>
-                <option value="wide">寬邊界 (Wide)</option>
+            <label>頁面邊距 (Margins)</label>
+            <div class="margin-grid">
+                <div class="margin-input-wrapper">
+                    <span>上</span>
+                    <input type="number" id="margin-top" value="10" step="1">
+                </div>
+                <div class="margin-input-wrapper">
+                    <span>下</span>
+                    <input type="number" id="margin-bottom" value="10" step="1">
+                </div>
+                <div class="margin-input-wrapper">
+                    <span>左</span>
+                    <input type="number" id="margin-left" value="10" step="1">
+                </div>
+                <div class="margin-input-wrapper">
+                    <span>右</span>
+                    <input type="number" id="margin-right" value="10" step="1">
+                </div>
+            </div>
+            <select id="margin-unit" style="margin-top:5px;">
+                <option value="mm">公釐 (mm)</option>
+                <option value="in">英吋 (inch)</option>
             </select>
         </div>
 
         <button class="btn-excel" onclick="exportExcelWithImages()" style="margin-top: 10px;">
             <span class="icon">📊</span>依設定轉出 EXCEL
         </button>
-
-        <div class="preview-box">
-            <label style="display:block; margin-bottom:5px; font-weight:bold;">版面示意圖 (預覽)</label>
-            <div id="preview-paper" class="preview-paper" style="width:100px; height:141px;"></div>
-            <div id="preview-text" class="preview-info"></div>
-        </div>
     </div>
 
 </div>
@@ -212,7 +219,7 @@
     let html5QrCode;
     let scanTimeout; 
 
-    window.onload = function() { loadConfig(); initGrid(); updatePreview(); };
+    window.onload = function() { loadConfig(); initGrid(); };
 
     function initGrid() {
         const gridContainer = document.getElementById('main-grid');
@@ -305,72 +312,9 @@
         } else {
             customInputs.style.display = 'none';
         }
-        updatePreview();
     }
 
-    // --- 修正後的預覽邏輯 ---
-    function updatePreview() {
-        const paper = document.getElementById('preview-paper');
-        const orientation = document.getElementById('print-orientation').value;
-        const cols = parseInt(document.getElementById('print-cols').value);
-        const size = document.getElementById('print-size').value;
-        const unit = document.getElementById('custom-unit').value; // 讀取單位
-        
-        let widthMm, heightMm;
-
-        // 設定尺寸
-        if (size === 'custom') {
-            // 讀取輸入值，如果為空給一個預設值
-            let rawW = parseFloat(document.getElementById('custom-width').value) || 100;
-            let rawH = parseFloat(document.getElementById('custom-height').value) || 150;
-            
-            // 單位換算
-            if (unit === 'in') {
-                widthMm = rawW * 25.4;
-                heightMm = rawH * 25.4;
-            } else {
-                widthMm = rawW;
-                heightMm = rawH;
-            }
-        } else if (size === '9') { // A4
-            widthMm = 210; heightMm = 297;
-        } else if (size === '1') { // Letter
-            widthMm = 216; heightMm = 279;
-        } else { // A5
-            widthMm = 148; heightMm = 210;
-        }
-
-        // 交換直橫向
-        if (orientation === 'landscape') {
-            [widthMm, heightMm] = [heightMm, widthMm];
-        }
-
-        // 預覽縮放計算 (最大寬度 150px)
-        const maxWidth = 150;
-        const scaleFactor = maxWidth / widthMm; 
-        
-        const displayW = widthMm * scaleFactor;
-        const displayH = heightMm * scaleFactor;
-
-        paper.style.width = displayW + 'px';
-        paper.style.height = displayH + 'px';
-
-        // 設定 grid column
-        paper.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-        
-        // 產生示意格子
-        paper.innerHTML = "";
-        for(let i=0; i<cols*2; i++) { 
-            let div = document.createElement('div');
-            div.className = 'preview-cell';
-            paper.appendChild(div);
-        }
-
-        let sizeText = (size === 'custom') ? `手動 (${Math.round(widthMm)}x${Math.round(heightMm)}mm)` : (size === "9" ? "A4" : (size === "1" ? "Letter" : "A5"));
-        document.getElementById('preview-text').innerText = `${sizeText} / ${cols}欄`;
-    }
-
-    // --- Excel 匯出 ---
+    // --- Excel 匯出 (包含邊距設定) ---
     async function exportExcelWithImages() {
         let hasData = false;
         for(let i=1; i<=appConfig.gridCount; i++){ if(document.getElementById('data-'+i).value.trim() !== "") hasData = true; }
@@ -382,7 +326,6 @@
         const printSizeVal = document.getElementById('print-size').value;
         const printOrientation = document.getElementById('print-orientation').value;
         const printCols = parseInt(document.getElementById('print-cols').value);
-        const printMargins = document.getElementById('print-margins').value;
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('QR Codes');
@@ -396,31 +339,38 @@
             fitToPage: false,
         };
 
-        let marginVal = 0.7; 
-        if(printMargins === 'narrow') marginVal = 0.25;
-        if(printMargins === 'wide') marginVal = 1.0;
-        
+        // --- 處理邊距 ---
+        const marginUnit = document.getElementById('margin-unit').value;
+        const marginTop = parseFloat(document.getElementById('margin-top').value) || 0;
+        const marginBottom = parseFloat(document.getElementById('margin-bottom').value) || 0;
+        const marginLeft = parseFloat(document.getElementById('margin-left').value) || 0;
+        const marginRight = parseFloat(document.getElementById('margin-right').value) || 0;
+
+        // ExcelJS 預設 margins 使用 inches
+        const convertToInches = (val) => {
+            return (marginUnit === 'mm') ? val / 25.4 : val;
+        };
+
         worksheet.pageSetup.margins = {
-            left: marginVal, right: marginVal,
-            top: marginVal, bottom: marginVal,
+            top: convertToInches(marginTop),
+            bottom: convertToInches(marginBottom),
+            left: convertToInches(marginLeft),
+            right: convertToInches(marginRight),
             header: 0, footer: 0 
         };
 
         // 欄寬計算
         let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
         if(printSizeVal === 'custom') {
-             // 重新計算寬度 (mm)
              let rawW = parseFloat(document.getElementById('custom-width').value) || 100;
              let unit = document.getElementById('custom-unit').value;
              let widthMm = (unit === 'in') ? rawW * 25.4 : rawW;
              
              if(printOrientation === 'landscape') { 
-                 // 如果是手動設定且轉橫向，要考慮高度當作寬度
                  let rawH = parseFloat(document.getElementById('custom-height').value) || 150;
                  let heightMm = (unit === 'in') ? rawH * 25.4 : rawH;
                  widthMm = heightMm;
              }
-             // 比例換算：A4寬 210mm 約等於 Excel 85 units
              totalWidthUnits = widthMm * (85 / 210);
         }
 
@@ -478,9 +428,9 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_CustomPrint.xlsx");
+        saveAs(blob, "QRCode_PrintLayout.xlsx");
         
-        statusDiv.innerText = "✅ Excel 下載完成！";
+        statusDiv.innerText = "✅ Excel 下載完成 (含邊距設定)！";
     }
 
     function startQRScan() {
