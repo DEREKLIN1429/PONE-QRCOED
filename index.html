@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V1.20)</title>
+    <title>QR Code 智慧系統 (V1.21 - 可調邊界)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -148,6 +148,28 @@
         <div class="form-group"><label data-i18n="lblGridCount">總格數設定 (預設 20)：</label><input type="number" id="set-count" min="1" max="100"></div>
         
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
+            <label style="font-weight:bold; margin-bottom:5px; display:block;">列印邊界設定 (英吋/Inches)：</label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:60px;">
+                    <label style="font-size:12px; color:#666;">左 (Left)</label>
+                    <input type="number" id="set-margin-left" step="0.01" placeholder="0.1" style="width:100%;">
+                </div>
+                <div style="flex:1; min-width:60px;">
+                    <label style="font-size:12px; color:#666;">右 (Right)</label>
+                    <input type="number" id="set-margin-right" step="0.01" placeholder="0" style="width:100%;">
+                </div>
+                <div style="flex:1; min-width:60px;">
+                    <label style="font-size:12px; color:#666;">上 (Top)</label>
+                    <input type="number" id="set-margin-top" step="0.01" placeholder="0" style="width:100%;">
+                </div>
+                <div style="flex:1; min-width:60px;">
+                    <label style="font-size:12px; color:#666;">下 (Bottom)</label>
+                    <input type="number" id="set-margin-bottom" step="0.01" placeholder="0" style="width:100%;">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label data-i18n="lblLangManage">語言管理 (Language Manage)：</label>
             <div class="lang-manage-list" id="lang-list-container"></div>
             <div class="lang-add-group"><input type="text" id="new-lang-code" placeholder="Code"><input type="text" id="new-lang-name" placeholder="Name"><button class="btn-sm-add" onclick="addNewLanguage()">Add</button></div>
@@ -211,7 +233,9 @@
     let appConfig = { 
         title: "QR Code 智慧系統", gridCount: 20, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
-        excelFontSize: 6
+        excelFontSize: 6,
+        // 新增預設邊界設定 (L:0.1, R:0, T:0, B:0)
+        printMargins: { left: 0.1, right: 0, top: 0, bottom: 0 }
     };
 
     let html5QrCode;
@@ -337,7 +361,7 @@
         }
     }
 
-    // --- Excel 匯出 (客製化順序版 V4 - 粗框線) ---
+    // --- Excel 匯出 (客製化順序版 V4 - 粗框線 + 自訂邊界) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -352,9 +376,16 @@
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('QR Codes');
 
+        // 使用 appConfig 中的設定邊界
         worksheet.pageSetup = { 
             paperSize: 9, orientation: 'portrait', 
-            margins: { top: 0, bottom: 0, left: 0, right: 0, header: 0, footer: 0 }
+            margins: { 
+                top: appConfig.printMargins.top, 
+                bottom: appConfig.printMargins.bottom, 
+                left: appConfig.printMargins.left, 
+                right: appConfig.printMargins.right, 
+                header: 0, footer: 0 
+            }
         };
         
         // 1. 設定欄寬 (間隔欄 1, 內容欄 12)
@@ -648,6 +679,13 @@
     function openSettings() {
         document.getElementById('set-title').value = appConfig.title;
         document.getElementById('set-count').value = appConfig.gridCount;
+        
+        // 載入當前邊界設定到 Input
+        document.getElementById('set-margin-left').value = appConfig.printMargins.left;
+        document.getElementById('set-margin-right').value = appConfig.printMargins.right;
+        document.getElementById('set-margin-top').value = appConfig.printMargins.top;
+        document.getElementById('set-margin-bottom').value = appConfig.printMargins.bottom;
+
         updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
@@ -656,6 +694,15 @@
     function saveSettings() {
         appConfig.title = document.getElementById('set-title').value;
         appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 20;
+        
+        // 讀取並儲存邊界設定
+        appConfig.printMargins = {
+            left: parseFloat(document.getElementById('set-margin-left').value) || 0,
+            right: parseFloat(document.getElementById('set-margin-right').value) || 0,
+            top: parseFloat(document.getElementById('set-margin-top').value) || 0,
+            bottom: parseFloat(document.getElementById('set-margin-bottom').value) || 0
+        };
+
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
         applyLanguage(appConfig.currentLang); 
@@ -680,6 +727,13 @@
             appConfig.gridCount = parsed.gridCount || 20;
             appConfig.currentLang = parsed.currentLang;
             appConfig.availableLangs = parsed.availableLangs;
+            
+            // 讀取邊界設定，若無舊資料則使用預設值
+            if(parsed.printMargins) {
+                appConfig.printMargins = parsed.printMargins;
+            } else {
+                appConfig.printMargins = { left: 0.1, right: 0, top: 0, bottom: 0 };
+            }
         }
     }
 </script>
