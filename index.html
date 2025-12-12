@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (滿版列印)</title>
+    <title>QR Code 智慧系統 (手動尺寸+滿版列印)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -25,7 +25,7 @@
         }
         .left-column { flex: 1; min-width: 300px; width: 100%; }
         .right-column {
-            width: 300px; background: var(--panel-bg); padding: 20px; border-radius: 10px;
+            width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content;
         }
         @media (max-width: 900px) {
@@ -73,4 +73,481 @@
         .qr-text-info { font-size: 13px; color: #333; word-break: break-all; background: #eef; padding: 4px; border-radius: 4px; width: 100%; min-height: 18px; }
 
         /* 設定面板 */
-        .print-settings-title { font-size: 18px; font-weight: bold;
+        .print-settings-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
+        .setting-group { margin-bottom: 15px; text-align: left; }
+        .setting-group label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; }
+        .setting-group select, .setting-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box;}
+        
+        /* 手動輸入區塊 */
+        .custom-size-group { display: flex; gap: 10px; margin-top: 5px; }
+        .custom-size-group input { width: 50%; }
+
+        .preview-box { border: 1px solid #ccc; background: #fff; padding: 10px; margin-top: 20px; text-align: center; }
+        .preview-paper {
+            width: 100px; height: 141px; border: 1px solid #333; margin: 0 auto; background: #fff;
+            display: grid; gap: 2px; padding: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .preview-cell { background: #ccc; border: 1px solid #999; }
+        .preview-info { font-size: 12px; color: #666; margin-top: 10px; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; }
+        .modal-footer { text-align: right; margin-top: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group input { width: 100%; padding: 8px; }
+
+    </style>
+</head>
+<body>
+
+<div class="main-layout">
+    
+    <div class="left-column">
+        <header>
+            <div class="settings-icon" onclick="openSettings()">⚙️</div>
+            <h2 id="app-title">QR Code 智慧系統</h2>
+            
+            <div id="camera-wrapper">
+                <div id="reader"></div>
+                <div class="camera-hint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
+            </div>
+            <div id="ocr-status"></div>
+
+            <div class="btn-group">
+                <button class="btn-scan" onclick="startQRScan()"><span class="icon">📸</span>掃描</button>
+                <button class="btn-ocr" onclick="triggerOCRFile()"><span class="icon">📄</span>圖片 OCR</button>
+                <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span>清除全部</button>
+                <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
+            </div>
+
+            <div class="batch-input-container">
+                <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料 (可貼上多筆)...">
+                <button class="btn-batch-add" onclick="processBatchInput()">⬇️ 加入</button>
+            </div>
+        </header>
+
+        <div class="grid-container" id="main-grid"></div>
+    </div>
+
+    <div class="right-column">
+        <div class="print-settings-title">🖨️ Excel 列印設定</div>
+        
+        <div class="setting-group">
+            <label>紙張大小 (Paper Size)</label>
+            <select id="print-size" onchange="toggleCustomSize()">
+                <option value="9">A4 (210 x 297 mm)</option>
+                <option value="1">Letter (8.5 x 11 in)</option>
+                <option value="11">A5 (148 x 210 mm)</option>
+                <option value="custom">手動設定 (Custom)</option>
+            </select>
+            
+            <div id="custom-size-inputs" class="custom-size-group" style="display:none;">
+                <input type="number" id="custom-width" placeholder="寬(mm)" value="100" onchange="updatePreview()">
+                <input type="number" id="custom-height" placeholder="高(mm)" value="150" onchange="updatePreview()">
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label>方向 (Orientation)</label>
+            <select id="print-orientation" onchange="updatePreview()">
+                <option value="portrait">直向 (Portrait)</option>
+                <option value="landscape">橫向 (Landscape)</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label>每行欄數 (Columns)</label>
+            <select id="print-cols" onchange="updatePreview()">
+                <option value="3">3 欄</option>
+                <option value="4">4 欄</option>
+                <option value="5">5 欄</option>
+                <option value="2">2 欄</option>
+                <option value="1">1 欄</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label>邊距模式 (Margins)</label>
+            <select id="print-margins" onchange="updatePreview()">
+                <option value="normal">標準 (Normal)</option>
+                <option value="narrow">窄邊界 (Narrow)</option>
+                <option value="wide">寬邊界 (Wide)</option>
+            </select>
+        </div>
+
+        <button class="btn-excel" onclick="exportExcelWithImages()" style="margin-top: 10px;">
+            <span class="icon">📊</span>依設定轉出 EXCEL
+        </button>
+
+        <div class="preview-box">
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">版面示意圖 (預覽)</label>
+            <div id="preview-paper" class="preview-paper">
+                </div>
+            <div id="preview-text" class="preview-info"></div>
+        </div>
+    </div>
+
+</div>
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h3>系統設定</h3>
+        <div class="form-group"><label>主標題名稱：</label><input type="text" id="set-title"></div>
+        <div class="form-group"><label>總格數設定：</label><input type="number" id="set-count" min="1" max="100"></div>
+        <div class="modal-footer">
+            <button onclick="saveSettings()" style="background-color:#28a745;color:white;padding:8px;border:none;border-radius:4px;">儲存</button>
+            <button onclick="closeSettings()" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px;">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let appConfig = { title: "QR Code 智慧系統", gridCount: 12, fontSize: 12 };
+    let html5QrCode;
+    let scanTimeout; 
+
+    window.onload = function() { loadConfig(); initGrid(); updatePreview(); };
+
+    function initGrid() {
+        const gridContainer = document.getElementById('main-grid');
+        gridContainer.innerHTML = ""; 
+        document.getElementById('app-title').innerText = appConfig.title;
+
+        for (let i = 1; i <= appConfig.gridCount; i++) {
+            let itemDiv = document.createElement('div');
+            itemDiv.className = 'grid-item';
+
+            let label = document.createElement('div');
+            label.className = 'grid-label';
+            label.innerText = '格位 ' + i;
+
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'grid-input';
+            input.id = 'data-' + i;
+            input.placeholder = '待輸入...';
+            input.onkeyup = function() { generateSingleCode(i); };
+
+            let codeDiv = document.createElement('div');
+            codeDiv.id = 'code-container-' + i;
+            codeDiv.className = 'code-display-area';
+            
+            let imgContent = document.createElement('div');
+            imgContent.id = 'code-img-' + i; 
+            codeDiv.appendChild(imgContent);
+
+            let textDiv = document.createElement('div');
+            textDiv.id = 'text-info-' + i;
+            textDiv.className = 'qr-text-info';
+
+            itemDiv.appendChild(label);
+            itemDiv.appendChild(input);
+            itemDiv.appendChild(codeDiv);
+            itemDiv.appendChild(textDiv);
+            gridContainer.appendChild(itemDiv);
+        }
+    }
+
+    function generateSingleCode(index) {
+        let inputVal = document.getElementById('data-' + index).value.trim();
+        let container = document.getElementById('code-img-' + index);
+        let textContainer = document.getElementById('text-info-' + index);
+        container.innerHTML = ""; 
+        textContainer.innerText = inputVal;
+        if (inputVal === "") { container.innerText = "(空)"; return; }
+        try { new QRCode(container, { text: inputVal, width: 100, height: 100, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M }); } catch(e) {}
+    }
+
+    function processBatchInput() {
+        let inputField = document.getElementById('batch-input');
+        let text = inputField.value.trim();
+        if (!text) { alert("請輸入資料！"); return; }
+        let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
+        for (let part of parts) {
+            let placed = false;
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                let input = document.getElementById('data-' + i);
+                if (input.value.trim() === "") {
+                    input.value = part; generateSingleCode(i); placed = true; break;
+                }
+            }
+            if (!placed) { alert("⚠️ 欄位已滿！無法再輸入更多資料。"); return; }
+        }
+        inputField.value = "";
+    }
+
+    function fillData(text) {
+        if (!confirm("掃描到的資料：\n\n" + text + "\n\n確定要填入嗎？")) return;
+        let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
+        for (let part of parts) {
+            let placed = false;
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                let input = document.getElementById('data-' + i);
+                if (input.value.trim() === "") {
+                    input.value = part; generateSingleCode(i); placed = true; break;
+                }
+            }
+            if (!placed) { alert("⚠️ 欄位已滿！"); return; }
+        }
+    }
+
+    // --- 新增：切換手動設定輸入框顯示 ---
+    function toggleCustomSize() {
+        const size = document.getElementById('print-size').value;
+        const customInputs = document.getElementById('custom-size-inputs');
+        if (size === 'custom') {
+            customInputs.style.display = 'flex';
+        } else {
+            customInputs.style.display = 'none';
+        }
+        updatePreview();
+    }
+
+    // --- 更新預覽畫面 ---
+    function updatePreview() {
+        const paper = document.getElementById('preview-paper');
+        const orientation = document.getElementById('print-orientation').value;
+        const cols = parseInt(document.getElementById('print-cols').value);
+        const size = document.getElementById('print-size').value;
+        
+        let widthMm, heightMm;
+
+        // 設定尺寸
+        if (size === 'custom') {
+            widthMm = parseFloat(document.getElementById('custom-width').value) || 100;
+            heightMm = parseFloat(document.getElementById('custom-height').value) || 150;
+        } else if (size === '9') { // A4
+            widthMm = 210; heightMm = 297;
+        } else if (size === '1') { // Letter
+            widthMm = 216; heightMm = 279;
+        } else { // A5
+            widthMm = 148; heightMm = 210;
+        }
+
+        // 交換直橫向
+        if (orientation === 'landscape') {
+            [widthMm, heightMm] = [heightMm, widthMm];
+        }
+
+        // 計算預覽框的顯示比例 (固定寬度 140px，高度依比例)
+        const scaleFactor = 140 / widthMm; 
+        const displayW = widthMm * scaleFactor;
+        const displayH = heightMm * scaleFactor;
+
+        paper.style.width = displayW + 'px';
+        paper.style.height = displayH + 'px';
+
+        // 設定 grid column
+        paper.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        
+        // 產生示意格子
+        paper.innerHTML = "";
+        for(let i=0; i<cols*2; i++) { 
+            let div = document.createElement('div');
+            div.className = 'preview-cell';
+            paper.appendChild(div);
+        }
+
+        let sizeText = (size === 'custom') ? `手動 ${widthMm}x${heightMm}mm` : (size === "9" ? "A4" : (size === "1" ? "Letter" : "A5"));
+        document.getElementById('preview-text').innerText = `${sizeText} / ${cols}欄`;
+    }
+
+    // --- Excel 匯出 (滿版 + 無標題 + 手動尺寸) ---
+    async function exportExcelWithImages() {
+        let hasData = false;
+        for(let i=1; i<=appConfig.gridCount; i++){ if(document.getElementById('data-'+i).value.trim() !== "") hasData = true; }
+        if(!hasData) { alert("目前沒有資料可以匯出！"); return; }
+
+        const statusDiv = document.getElementById('ocr-status');
+        statusDiv.innerText = "⏳ 正在產生 Excel...";
+
+        // 讀取列印設定
+        const printSizeVal = document.getElementById('print-size').value;
+        const printOrientation = document.getElementById('print-orientation').value;
+        const printCols = parseInt(document.getElementById('print-cols').value);
+        const printMargins = document.getElementById('print-margins').value;
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('QR Codes');
+
+        // 1. 設定頁面佈局
+        let paperSizeId = undefined;
+        if(printSizeVal !== 'custom') {
+            paperSizeId = parseInt(printSizeVal);
+        }
+        
+        worksheet.pageSetup = {
+            paperSize: paperSizeId, // 若為 undefined (custom) 則不設定標準紙張 ID
+            orientation: printOrientation,
+            fitToPage: false,
+        };
+
+        // 2. 設定邊界
+        let marginVal = 0.7; // normal
+        if(printMargins === 'narrow') marginVal = 0.25;
+        if(printMargins === 'wide') marginVal = 1.0;
+        
+        worksheet.pageSetup.margins = {
+            left: marginVal, right: marginVal,
+            top: marginVal, bottom: marginVal,
+            header: 0, footer: 0 // 移除頁首頁尾
+        };
+
+        // 3. 設定欄寬 (根據欄數調整)
+        // 若是手動尺寸，Excel 很難精準對應 mm，這裡用比例推算
+        let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
+        
+        // 如果是手動設定，根據輸入的寬度做簡單的權重調整
+        if(printSizeVal === 'custom') {
+             let customW = parseFloat(document.getElementById('custom-width').value);
+             // 假設 A4 210mm 對應 85 units -> ratio ~ 0.4
+             totalWidthUnits = customW * 0.4;
+             if(printOrientation === 'landscape') { 
+                 // 這裡邏輯簡化，Excel custom page size 支援度有限，主要靠列印驅動程式
+                 // 我們盡量讓欄寬比例正確
+             }
+        }
+
+        let colWidth = Math.floor(totalWidthUnits / printCols);
+        let colsConfig = [];
+        for(let k=0; k<printCols; k++) { colsConfig.push({ width: colWidth }); }
+        worksheet.columns = colsConfig;
+
+        // 注意：移除標題列，validItemIndex 從 0 開始，對應到 Excel Row 1
+        let validItemIndex = 0; 
+
+        for (let i = 1; i <= appConfig.gridCount; i++) {
+            let val = document.getElementById('data-' + i).value.trim();
+            
+            if (val !== "") {
+                let colIndex = validItemIndex % printCols; 
+                let rowGroupIndex = Math.floor(validItemIndex / printCols);
+                let imgRowNumber = 1 + (rowGroupIndex * 2); // 從第1列開始
+                let textRowNumber = imgRowNumber + 1;
+
+                // 設定高度
+                worksheet.getRow(imgRowNumber).height = 100;
+                worksheet.getRow(textRowNumber).height = 30;
+
+                let containerDiv = document.getElementById('code-img-' + i);
+                let canvasObj = containerDiv.querySelector('canvas');
+                let imgObj = containerDiv.querySelector('img');
+                let base64Image = null;
+                if (canvasObj) base64Image = canvasObj.toDataURL('image/png');
+                else if (imgObj && imgObj.src) base64Image = imgObj.src;
+
+                if (base64Image) {
+                    const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
+                    
+                    // --- 核心修改：滿版填滿 ---
+                    // 使用 tl (top-left) 和 br (bottom-right) 來定義圖片位置
+                    // colIndex 對應欄位, imgRowNumber-1 對應列索引 (0-based)
+                    worksheet.addImage(imageId, {
+                        tl: { col: colIndex, row: imgRowNumber - 1 },
+                        br: { col: colIndex + 1, row: imgRowNumber }, // 延伸到下一欄、下一列的邊界
+                        editAs: 'oneCell' // 隨儲存格大小縮放
+                    });
+                } else {
+                    let cell = worksheet.getCell(imgRowNumber, colIndex + 1);
+                    cell.value = "(無圖)";
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                }
+
+                let textCell = worksheet.getCell(textRowNumber, colIndex + 1);
+                textCell.value = val;
+                textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                textCell.font = { size: 12, bold: true };
+
+                let imgCell = worksheet.getCell(imgRowNumber, colIndex + 1);
+                imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+                textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+
+                validItemIndex++;
+            }
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        saveAs(blob, "QRCode_FullFill.xlsx");
+        
+        statusDiv.innerText = "✅ Excel 下載完成 (滿版列印)！";
+    }
+
+    function startQRScan() {
+        const wrapper = document.getElementById('camera-wrapper');
+        wrapper.style.display = "block";
+        document.getElementById('ocr-status').innerText = "相機啟動中... (10秒自動關閉)";
+        html5QrCode = new Html5Qrcode("reader");
+        resetScanTimer();
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+            (decodedText) => { fillData(decodedText); resetScanTimer(); }, () => {}
+        ).then(() => {
+            setTimeout(() => {
+                let videoElement = document.querySelector("#reader video");
+                if(videoElement) videoElement.onclick = function() { captureAndOCR(videoElement); };
+            }, 1000);
+        }).catch(err => { alert("無法啟動相機：" + err); wrapper.style.display = "none"; });
+    }
+
+    function stopScan() {
+        if(html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('camera-wrapper').style.display = "none";
+                clearTimeout(scanTimeout);
+            }).catch(err => console.log(err));
+        }
+    }
+    function resetScanTimer() {
+        if(scanTimeout) clearTimeout(scanTimeout);
+        scanTimeout = setTimeout(() => { stopScan(); document.getElementById('ocr-status').innerText = "💤 相機關閉"; }, 10000);
+    }
+    function captureAndOCR(video) {
+        let canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        document.getElementById('ocr-status').innerText = "⏳ 正在辨識...";
+        stopScan(); 
+        Tesseract.recognize(canvas.toDataURL('image/png'), 'eng+chi_tra').then(({ data: { text } }) => {
+            document.getElementById('ocr-status').innerText = "✅ 辨識完成";
+            fillData(text.replace(/,/g, " "));
+        });
+    }
+    function triggerOCRFile() { document.getElementById('ocr-file-input').click(); }
+    function processOCRFile(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('ocr-status').innerText = "⏳ 讀取中...";
+            Tesseract.recognize(input.files[0], 'eng+chi_tra').then(({ data: { text } }) => {
+                document.getElementById('ocr-status').innerText = "✅ 完成";
+                fillData(text.replace(/,/g, " "));
+            });
+        }
+    }
+    function clearAll() {
+        if(!confirm("確定清除全部？")) return;
+        for (let i = 1; i <= appConfig.gridCount; i++) {
+            document.getElementById('data-' + i).value = "";
+            generateSingleCode(i);
+        }
+    }
+    function openSettings() {
+        document.getElementById('set-title').value = appConfig.title;
+        document.getElementById('set-count').value = appConfig.gridCount;
+        document.getElementById('settingsModal').style.display = "block";
+    }
+    function closeSettings() { document.getElementById('settingsModal').style.display = "none"; }
+    function saveSettings() {
+        appConfig.title = document.getElementById('set-title').value;
+        appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 12;
+        localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
+        initGrid();
+        closeSettings();
+    }
+    function loadConfig() {
+        let saved = localStorage.getItem('qrAppConfig');
+        if (saved) appConfig = JSON.parse(saved);
+    }
+</script>
+</body>
+</html>
