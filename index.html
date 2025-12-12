@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (確認版)</title>
+    <title>QR Code 智慧系統 (3欄Excel版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -42,57 +42,40 @@
         }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; }
 
-        /* --- 修改重點：按鈕樣式與 RWD 排版 --- */
+        /* 按鈕樣式 (RWD: 手機2欄 / 電腦4欄) */
         .btn-group { 
             display: grid; 
             gap: 8px; 
             width: 100%;
-            max-width: 800px; /* 限制電腦版最大寬度 */
+            max-width: 800px; 
             margin: 0 auto 20px auto;
-            
-            /* 手機版預設：2欄 */
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr; /* 手機預設 */
         }
 
-        /* 電腦版 (螢幕大於 768px)：改為 4欄 1行 */
         @media (min-width: 768px) {
-            .btn-group {
-                grid-template-columns: repeat(4, 1fr);
-            }
+            .btn-group { grid-template-columns: repeat(4, 1fr); }
         }
         
         button {
             width: 100%;
-            /* 移除 aspect-ratio，改用 padding 控制高度 */
             padding: 10px 5px; 
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            
-            /* 字體加大 */
             font-size: 18px; 
             color: white;
             font-weight: bold;
             box-shadow: 0 3px 5px rgba(0,0,0,0.15);
-            
             display: flex;
-            flex-direction: column; /* Icon 上 文字 下 */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             line-height: 1.2;
-            
-            /* 防止文字溢出 */
             overflow: hidden;
-            white-space: normal; /* 允許換行 */
+            white-space: normal;
         }
         
-        button span.icon { 
-            font-size: 20px; 
-            margin-bottom: 2px; 
-            display: block; 
-        }
-
-        /* 針對 Excel 按鈕文字較長做微調 */
+        button span.icon { font-size: 20px; margin-bottom: 2px; display: block; }
         .btn-excel { font-size: 16px; } 
 
         .btn-scan { background-color: #007bff; }
@@ -283,12 +266,10 @@
         }
 
         function fillData(text) {
-            // --- 修改重點：增加確認視窗 ---
             let confirmMsg = "掃描到的資料：\n\n" + text + "\n\n確定要填入嗎？";
             if (!confirm(confirmMsg)) {
-                return; // 如果使用者按取消，就直接結束，不執行後續填入
+                return;
             }
-            // --------------------------------
 
             let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
             let filledCount = 0;
@@ -311,6 +292,7 @@
             }
         }
 
+        // --- 重點修改：Excel 3欄位排版 ---
         async function exportExcelWithImages() {
             let hasData = false;
             for(let i=1; i<=appConfig.gridCount; i++){
@@ -319,25 +301,48 @@
             if(!hasData) { alert("目前沒有資料可以匯出！"); return; }
 
             const statusDiv = document.getElementById('ocr-status');
-            statusDiv.innerText = "⏳ 正在產生 Excel (含圖片)...";
+            statusDiv.innerText = "⏳ 正在產生 3欄 Excel (含圖片)...";
 
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('QR Codes');
 
-            worksheet.getColumn(1).width = 25; 
-            worksheet.getColumn(2).width = 15; 
+            // 設定 3 個欄位的寬度 (A, B, C)
+            worksheet.columns = [
+                { width: 25 }, { width: 25 }, { width: 25 }
+            ];
 
-            worksheet.getCell('A1').value = "QR Code & 資料內容";
+            // 表頭
+            worksheet.mergeCells('A1:C1');
+            worksheet.getCell('A1').value = "QR Code 資料清單 (3欄排列)";
             worksheet.getCell('A1').font = { bold: true, size: 14 };
+            worksheet.getCell('A1').alignment = { horizontal: 'center' };
             
-            let currentRow = 2; 
+            let validItemIndex = 0; // 用來計算排在第幾個位置
+            const COL_COUNT = 3;    // 3欄模式
 
             for (let i = 1; i <= appConfig.gridCount; i++) {
                 let val = document.getElementById('data-' + i).value.trim();
                 
+                // 只有當格子有資料時才匯出
                 if (val !== "") {
-                    worksheet.getRow(currentRow).height = 100; 
+                    // 計算目前資料應該在第幾欄 (0, 1, 2)
+                    let colIndex = validItemIndex % COL_COUNT; 
+                    
+                    // 計算目前資料應該在第幾組列 (0, 1, 2...)
+                    // 每組列包含：圖片列 + 文字列
+                    let rowGroupIndex = Math.floor(validItemIndex / COL_COUNT);
 
+                    // 轉換成 Excel 的實際列號 (從第2列開始是資料區)
+                    // 圖片列：2, 4, 6...
+                    // 文字列：3, 5, 7...
+                    let imgRowNumber = 2 + (rowGroupIndex * 2);
+                    let textRowNumber = imgRowNumber + 1;
+
+                    // 設定高度
+                    worksheet.getRow(imgRowNumber).height = 100; // 圖片格高度
+                    worksheet.getRow(textRowNumber).height = 30; // 文字格高度
+
+                    // --- 處理圖片 ---
                     let imgContainer = document.querySelector('#code-img-' + i + ' img');
                     let canvasContainer = document.querySelector('#code-img-' + i + ' canvas');
                     let base64Image = null;
@@ -348,36 +353,45 @@
                         base64Image = canvasContainer.toDataURL();
                     }
 
+                    // 取得目前的 Cell (圖片放置位置)
+                    // colIndex 是 0,1,2，對應 Excel 欄位是 1,2,3
+                    // row 是 imgRowNumber (因為 addImage 使用的是 0-based row index，所以要減 1)
+                    
                     if (base64Image && codeModes[i] === 'qr') {
                         const imageId = workbook.addImage({
                             base64: base64Image,
                             extension: 'png',
                         });
                         worksheet.addImage(imageId, {
-                            tl: { col: 0, row: currentRow - 1 },
-                            ext: { width: 100, height: 100 }
+                            tl: { col: colIndex, row: imgRowNumber - 1 }, // row 為 0-based
+                            ext: { width: 100, height: 100 },
+                            editAs: 'oneCell'
                         });
                     } else {
-                         worksheet.getCell('A' + currentRow).value = "[條碼/無圖]";
+                        // 如果是條碼或無圖，顯示文字替代
+                        let cell = worksheet.getCell(imgRowNumber, colIndex + 1);
+                        cell.value = "[條碼/無圖]";
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
                     }
 
-                    let textRow = currentRow + 1;
-                    worksheet.getRow(textRow).height = 25; 
-                    let cell = worksheet.getCell('A' + textRow);
-                    cell.value = val;
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                    cell.font = { size: 12, bold: true };
+                    // --- 處理下方文字 ---
+                    let textCell = worksheet.getCell(textRowNumber, colIndex + 1);
+                    textCell.value = val;
+                    textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                    textCell.font = { size: 12, bold: true };
 
-                    worksheet.getCell('A' + currentRow).border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
-                    worksheet.getCell('A' + textRow).border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+                    // 畫框線
+                    let imgCell = worksheet.getCell(imgRowNumber, colIndex + 1);
+                    imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+                    textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
 
-                    currentRow += 2;
+                    validItemIndex++;
                 }
             }
 
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-            saveAs(blob, "QRCode_Data_With_Images.xlsx");
+            saveAs(blob, "QRCode_Data_3Columns.xlsx");
             
             statusDiv.innerText = "✅ Excel 下載完成！";
         }
