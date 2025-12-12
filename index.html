@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (DEREK LIN Final UI)</title>
+    <title>QR Code 智慧系統 (DEREK LIN Perfect Excel)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -89,21 +89,17 @@
         .btn-clear { background-color: #dc3545; }
         button:active { transform: scale(0.98); }
 
-        /* --- 修正 1：快速輸入列 (Input 長，Btn 短) --- */
+        /* 快速輸入列 */
         .batch-input-container { 
             width: 100%; display: flex; gap: 8px; margin-bottom: 15px; 
         }
         .batch-input { 
-            flex: 1; /* 佔據所有剩餘空間，變長 */
-            padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; 
+            flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; 
         }
         .btn-batch-add { 
-            width: auto; /* 自動寬度 */
-            min-width: 80px; /* 最小寬度防止太扁 */
-            flex: 0 0 auto; /* 不自動伸縮 */
+            width: auto; min-width: 80px; flex: 0 0 auto; 
             background-color: #28a745; color: white; border: none; border-radius: 8px; 
-            padding: 0 15px; /* 減少內距 */
-            font-size: 16px; font-weight: bold; cursor: pointer; 
+            padding: 0 15px; font-size: 16px; font-weight: bold; cursor: pointer; 
             white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15); 
         }
 
@@ -139,22 +135,15 @@
         .form-group { margin-bottom: 15px; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
         
-        /* --- 修正 2：設定內的語言管理 (輸入框加大，按鈕變短) --- */
+        /* 語言管理 */
         .lang-manage-list { margin-top: 10px; border: 1px solid #eee; padding: 5px; max-height: 100px; overflow-y: auto; }
         .lang-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #f0f0f0; align-items: center; }
         .lang-item:last-child { border-bottom: none; }
         .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; width: auto; height: auto; }
         
         .lang-add-group { display: flex; gap: 5px; margin-top: 10px; align-items: center; }
-        .lang-add-group input { 
-            flex: 1; /* 輸入框佔滿 */
-            padding: 6px; font-size: 13px; 
-        }
-        .btn-sm-add { 
-            width: auto; flex: 0 0 auto; /* 按鈕不伸縮 */
-            background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; 
-            padding: 6px 12px; font-size: 13px; 
-        }
+        .lang-add-group input { flex: 1; padding: 6px; font-size: 13px; }
+        .btn-sm-add { width: auto; flex: 0 0 auto; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 6px 12px; font-size: 13px; }
 
         /* 作者署名 */
         .author-info {
@@ -318,11 +307,11 @@
             <div style="display:flex; gap:10px; align-items:center;">
                 <div style="flex:1;">
                     <label style="font-size:12px;">欄間隔 (Col Width)</label>
-                    <input type="number" id="def-spacer-w" placeholder="0.5" step="0.1">
+                    <input type="number" id="def-spacer-w" placeholder="1" step="0.1">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:12px;">列間隔 (Row Height)</label>
-                    <input type="number" id="def-spacer-h" placeholder="9" step="1">
+                    <input type="number" id="def-spacer-h" placeholder="10" step="1">
                 </div>
             </div>
         </div>
@@ -469,10 +458,10 @@
             height: 15.24,
             unit: 'cm'
         },
-        // Excel 間隔設定
+        // Excel 間隔設定 (預設 1, 10)
         excelSpacer: {
-            colWidth: 0.5,
-            rowHeight: 9
+            colWidth: 1,
+            rowHeight: 10
         },
         lastPrintState: null
     };
@@ -493,7 +482,6 @@
     };
 
     function initPrintSettings() {
-        // 若無記憶，則使用預設值：custom, 10.16x15.24 cm
         const p = appConfig.lastPrintState || {
             size: 'custom',
             customW: appConfig.defaultPaper.width,
@@ -622,8 +610,12 @@
         }
 
         // 間隔設定
-        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 0.5;
-        let availableW = totalWidthUnits - ((printCols - 1) * spacerW);
+        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
+        
+        // 總空間扣除間隔欄
+        // 間隔欄數量 = printCols (因為最右邊也加一欄)
+        // mainWidth * printCols + spacerW * printCols = totalWidthUnits
+        let availableW = totalWidthUnits - (printCols * spacerW);
         let mainColWidth = availableW / printCols;
         if(mainColWidth < 1) mainColWidth = 10; 
 
@@ -631,20 +623,18 @@
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
             colsConfig.push({ width: mainColWidth }); 
-            if (k < printCols - 1) {
-                colsConfig.push({ width: spacerW }); // 間隔欄
-            }
+            colsConfig.push({ width: spacerW }); // 每一欄右側都加間隔
         }
         worksheet.columns = colsConfig;
 
         // 設定 Row 1 (頂部空白列)
-        let topSpacerH = parseFloat(appConfig.excelSpacer.rowHeight) || 9;
+        let topSpacerH = parseFloat(appConfig.excelSpacer.rowHeight) || 10;
         worksheet.getRow(1).height = topSpacerH;
 
         let validItemIndex = 0; 
         const IMG_H = 100;
         const TXT_H = 30;
-        const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 9; // 列間隔高度
+        const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 10; // 列間隔高度
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
@@ -906,8 +896,8 @@
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
 
         // 儲存間隔設定
-        appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 0.5;
-        appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 9;
+        appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 1;
+        appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 10;
 
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
@@ -922,7 +912,7 @@
             if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
             if(!parsed.defaultPaper) parsed.defaultPaper = { width: 10.16, height: 15.24, unit: 'cm' };
-            if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 0.5, rowHeight: 9 };
+            if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 1, rowHeight: 10 };
             appConfig = parsed;
         }
     }
