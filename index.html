@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (圖片匯出版)</title>
+    <title>QR Code 智慧系統 (確認版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
@@ -26,7 +25,7 @@
         
         h2 { color: #333; margin: 10px 0 20px 0; font-size: 1.5rem; width: 100%; }
 
-        /* 設定按鈕 (右上角) */
+        /* 設定按鈕 */
         .settings-icon {
             position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer;
             background: #fff; padding: 5px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100;
@@ -43,37 +42,58 @@
         }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; }
 
-        /* --- 修改重點 1：按鈕改為 2欄一行 + 正方形 --- */
+        /* --- 修改重點：按鈕樣式與 RWD 排版 --- */
         .btn-group { 
-            display: grid; /* 使用網格佈局 */
-            grid-template-columns: 1fr 1fr; /* 分成兩欄，寬度各半 */
-            gap: 10px; /* 按鈕間距 */
+            display: grid; 
+            gap: 8px; 
             width: 100%;
-            max-width: 500px; /* 限制最大寬度，避免電腦版按鈕太大 */
+            max-width: 800px; /* 限制電腦版最大寬度 */
             margin: 0 auto 20px auto;
+            
+            /* 手機版預設：2欄 */
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* 電腦版 (螢幕大於 768px)：改為 4欄 1行 */
+        @media (min-width: 768px) {
+            .btn-group {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
         
         button {
             width: 100%;
-            aspect-ratio: 1 / 1; /* 設定長寬比為 1:1 (正方形) */
+            /* 移除 aspect-ratio，改用 padding 控制高度 */
+            padding: 10px 5px; 
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            
+            /* 字體加大 */
+            font-size: 18px; 
             color: white;
             font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 5px rgba(0,0,0,0.15);
             
-            /* 讓文字與圖示垂直置中 */
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* Icon 上 文字 下 */
             justify-content: center;
             align-items: center;
-            line-height: 1.5;
+            line-height: 1.2;
+            
+            /* 防止文字溢出 */
+            overflow: hidden;
+            white-space: normal; /* 允許換行 */
         }
         
-        /* 增加按鈕內的 Emoji 大小 */
-        button span.icon { font-size: 24px; display: block; margin-bottom: 5px; }
+        button span.icon { 
+            font-size: 20px; 
+            margin-bottom: 2px; 
+            display: block; 
+        }
+
+        /* 針對 Excel 按鈕文字較長做微調 */
+        .btn-excel { font-size: 16px; } 
 
         .btn-scan { background-color: #007bff; }
         .btn-ocr { background-color: #ffc107; color: #333; }
@@ -145,13 +165,13 @@
 
         <div class="btn-group">
             <button class="btn-scan" onclick="startQRScan()">
-                <span class="icon">📸</span>掃描 (10s)
+                <span class="icon">📸</span>掃描
             </button>
             <button class="btn-ocr" onclick="triggerOCRFile()">
                 <span class="icon">📄</span>圖片 OCR
             </button>
             <button class="btn-excel" onclick="exportExcelWithImages()">
-                <span class="icon">📊</span>轉出 EXCEL<br>(含圖片)
+                <span class="icon">📊</span>匯出 EXCEL
             </button>
             <button class="btn-clear" onclick="clearAll()">
                 <span class="icon">🗑️</span>清除全部
@@ -219,7 +239,7 @@
                 codeDiv.appendChild(hint);
 
                 let imgContent = document.createElement('div');
-                imgContent.id = 'code-img-' + i; // 這裡放圖片
+                imgContent.id = 'code-img-' + i; 
                 codeDiv.appendChild(imgContent);
 
                 let textDiv = document.createElement('div');
@@ -263,6 +283,13 @@
         }
 
         function fillData(text) {
+            // --- 修改重點：增加確認視窗 ---
+            let confirmMsg = "掃描到的資料：\n\n" + text + "\n\n確定要填入嗎？";
+            if (!confirm(confirmMsg)) {
+                return; // 如果使用者按取消，就直接結束，不執行後續填入
+            }
+            // --------------------------------
+
             let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
             let filledCount = 0;
             for (let part of parts) {
@@ -284,9 +311,7 @@
             }
         }
 
-        // --- 重點功能：Excel 匯出 (含圖片) ---
         async function exportExcelWithImages() {
-            // 檢查是否有資料
             let hasData = false;
             for(let i=1; i<=appConfig.gridCount; i++){
                 if(document.getElementById('data-'+i).value.trim() !== "") hasData = true;
@@ -294,31 +319,25 @@
             if(!hasData) { alert("目前沒有資料可以匯出！"); return; }
 
             const statusDiv = document.getElementById('ocr-status');
-            statusDiv.innerText = "⏳ 正在產生 Excel (含圖片)，請稍候...";
+            statusDiv.innerText = "⏳ 正在產生 Excel (含圖片)...";
 
-            // 建立 Workbook
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('QR Codes');
 
-            // 設定欄位寬度
-            worksheet.getColumn(1).width = 25; // A欄寬度 (放圖和文)
-            worksheet.getColumn(2).width = 15; // B欄寬度 (格位編號，備用)
+            worksheet.getColumn(1).width = 25; 
+            worksheet.getColumn(2).width = 15; 
 
-            // 表頭
             worksheet.getCell('A1').value = "QR Code & 資料內容";
             worksheet.getCell('A1').font = { bold: true, size: 14 };
             
-            let currentRow = 2; // 從第2列開始
+            let currentRow = 2; 
 
             for (let i = 1; i <= appConfig.gridCount; i++) {
                 let val = document.getElementById('data-' + i).value.trim();
                 
-                // 只有當格子有資料時才匯出
                 if (val !== "") {
-                    // 1. 設定高度 (給圖片用)
                     worksheet.getRow(currentRow).height = 100; 
 
-                    // 2. 抓取圖片 Base64
                     let imgContainer = document.querySelector('#code-img-' + i + ' img');
                     let canvasContainer = document.querySelector('#code-img-' + i + ' canvas');
                     let base64Image = null;
@@ -329,41 +348,33 @@
                         base64Image = canvasContainer.toDataURL();
                     }
 
-                    // 3. 如果有圖片，加入 Excel
                     if (base64Image && codeModes[i] === 'qr') {
                         const imageId = workbook.addImage({
                             base64: base64Image,
                             extension: 'png',
                         });
-
-                        // 圖片放在目前列 (currentRow) 的 A欄
                         worksheet.addImage(imageId, {
-                            tl: { col: 0, row: currentRow - 1 }, // 注意：row index 從 0 開始
+                            tl: { col: 0, row: currentRow - 1 },
                             ext: { width: 100, height: 100 }
                         });
                     } else {
-                        // 如果是條碼或純文字，直接寫入文字代表
                          worksheet.getCell('A' + currentRow).value = "[條碼/無圖]";
                     }
 
-                    // 4. 下一列放資料文字 (在圖片下方)
                     let textRow = currentRow + 1;
-                    worksheet.getRow(textRow).height = 25; // 文字列高度
+                    worksheet.getRow(textRow).height = 25; 
                     let cell = worksheet.getCell('A' + textRow);
                     cell.value = val;
                     cell.alignment = { vertical: 'middle', horizontal: 'center' };
                     cell.font = { size: 12, bold: true };
 
-                    // 畫框線 (圖跟文一組)
                     worksheet.getCell('A' + currentRow).border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
                     worksheet.getCell('A' + textRow).border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
 
-                    // 跳過兩列 (圖片列 + 文字列) 準備下一個
                     currentRow += 2;
                 }
             }
 
-            // 匯出檔案
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
             saveAs(blob, "QRCode_Data_With_Images.xlsx");
@@ -371,7 +382,6 @@
             statusDiv.innerText = "✅ Excel 下載完成！";
         }
 
-        // --- 輔助功能 ---
         function toggleCodeType(index) {
             let current = codeModes[index];
             codeModes[index] = (current === 'qr') ? 'barcode' : 'qr';
@@ -388,7 +398,6 @@
                 (decodedText) => {
                     fillData(decodedText); 
                     resetScanTimer();
-                    document.getElementById('ocr-status').innerText = "✅ 已填入: " + decodedText;
                 }, () => {}
             ).then(() => {
                 setTimeout(() => {
