@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (客製化版面)</title>
+    <title>QR Code 智慧系統 (客製化版面 V3)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -127,14 +127,14 @@
     <div class="right-column">
         <div class="print-settings-title" data-i18n="printSettings">🖨️ 客製化輸出說明</div>
         <div class="info-box">
-            此模式為 <b>特殊順序版</b>。<br><br>
+            此模式為 <b>客製化序列版 V3</b>。<br><br>
             Excel 輸出邏輯如下：<br>
-            • 間隔欄 A, C, E, G, I 寬度為 1<br>
-            • 圖片自動填入順序：<br>
-              <b>B2→D2→F2→H5→B5→D5...</b><br>
-            • 圖片將<b>填滿儲存格 (背景)</b><br>
-            <br>
-            請點擊 <b>「轉出客製化 EXCEL」</b>。
+            • 資料欄 B, D, F, H<br>
+            • 特殊列高：<br>
+              A11=46.1, A15=12, A16=5.6<br>
+            • 序列順序：<br>
+              <b>B2→D2→F2→H2...</b> (共5排)<br>
+            • 圖片<b>背景填滿</b><br>
         </div>
     </div>
 </div>
@@ -143,7 +143,7 @@
     <div class="modal-content">
         <h3 data-i18n="settingsTitle">系統設定</h3>
         <div class="form-group"><label data-i18n="lblAppTitle">主標題名稱：</label><input type="text" id="set-title"></div>
-        <div class="form-group"><label data-i18n="lblGridCount">總格數設定 (預設 12)：</label><input type="number" id="set-count" min="1" max="100"></div>
+        <div class="form-group"><label data-i18n="lblGridCount">總格數設定 (預設 20)：</label><input type="number" id="set-count" min="1" max="100"></div>
         
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label data-i18n="lblLangManage">語言管理 (Language Manage)：</label>
@@ -206,8 +206,9 @@
         }
     };
 
+    // 增加預設格數到 20 以符合 5排 x 4欄 的需求
     let appConfig = { 
-        title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
+        title: "QR Code 智慧系統", gridCount: 20, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
         excelFontSize: 6
     };
@@ -302,7 +303,7 @@
         }
     }
 
-    // --- Excel 匯出 (客製化順序版) ---
+    // --- Excel 匯出 (客製化順序版 V3) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -322,8 +323,7 @@
             margins: { top: 0, bottom: 0, left: 0, right: 0, header: 0, footer: 0 }
         };
         
-        // 1. 設定欄寬 (A,C,E,G,I 為 1; 其他為內容欄)
-        // 預設內容欄寬為 11.5 (沿用設定)，A,C,E,G,I 設為 1
+        // 1. 設定欄寬 (間隔欄 1, 內容欄 11.5)
         worksheet.columns = [
             { width: 1 },     // A (Spacer)
             { width: 11.50 }, // B (Content)
@@ -331,48 +331,48 @@
             { width: 11.50 }, // D (Content)
             { width: 1 },     // E (Spacer)
             { width: 11.50 }, // F (Content)
-            { width: 1 },     // G (Spacer) - 根據規律補上
+            { width: 1 },     // G (Spacer)
             { width: 11.50 }, // H (Content)
             { width: 1 },     // I (Spacer)
         ];
 
-        // 2. 定義 1~12 格的具體位置 (Row 為 Excel 行號, Col 為 Excel 欄索引)
-        // 順序: B2, D2, F2, H5, B5, D5, F8, H8, B8, D11, F11, H11
-        // 注意: 圖片在 Row, 文字在 Row+1
-        const layoutMap = [
-            { col: 2, row: 2 },  // 1: B2
-            { col: 4, row: 2 },  // 2: D2
-            { col: 6, row: 2 },  // 3: F2
-            { col: 8, row: 5 },  // 4: H5 (跳至第5列 H欄)
-            { col: 2, row: 5 },  // 5: B5
-            { col: 4, row: 5 },  // 6: D5
-            { col: 6, row: 8 },  // 7: F8 (跳至第8列 F欄)
-            { col: 8, row: 8 },  // 8: H8
-            { col: 2, row: 8 },  // 9: B8
-            { col: 4, row: 11 }, // 10: D11 (跳至第11列 D欄)
-            { col: 6, row: 11 }, // 11: F11
-            { col: 8, row: 11 }  // 12: H11
-        ];
+        // 2. 定義布局圖 (Sequence Loop)
+        // 順序: B2, D2, F2, H2 ... B14, D14, F14, H14
+        const layoutMap = [];
+        const contentCols = [2, 4, 6, 8]; // B, D, F, H
+        const startRows = [2, 5, 8, 11, 14]; // 5 組起始列
 
-        // 3. 設定列高 (遍歷所有可能用到的列)
-        // 主要列組: (2,3,4), (5,6,7), (8,9,10), (11,12,13)
-        // 格式: Image(57.6), Text(15), Spacer(7/5)
+        startRows.forEach(row => {
+            contentCols.forEach(col => {
+                layoutMap.push({ row: row, col: col });
+            });
+        });
+
+        // 3. 設定列高 (特殊設定)
         worksheet.getRow(1).height = 5; // Top Margin
 
-        const rowGroups = [2, 5, 8, 11];
-        rowGroups.forEach(startRow => {
-            worksheet.getRow(startRow).height = 57.6;     // 圖片列
-            worksheet.getRow(startRow + 1).height = 15;   // 文字列
+        startRows.forEach(startRow => {
+            // 預設高度
+            let h_img = 57.6;
+            let h_txt = 15;
+            let h_spc = 7;
+
+            // 特殊覆寫規則
+            if (startRow === 11) h_img = 46.1; // A11 列高設定
             
-            // 間隔列處理
-            let spacerRow = startRow + 2;
-            if (spacerRow === 13) worksheet.getRow(spacerRow).height = 5; // 底部邊界
-            else worksheet.getRow(spacerRow).height = 7; // 一般間隔
+            let txtRow = startRow + 1;
+            if (txtRow === 15) h_txt = 12; // A15 列高設定
+
+            let spcRow = startRow + 2;
+            if (spcRow === 16) h_spc = 5.6; // A16 列高設定
+
+            worksheet.getRow(startRow).height = h_img;
+            worksheet.getRow(txtRow).height = h_txt;
+            worksheet.getRow(spcRow).height = h_spc;
         });
 
         // 4. 填入資料
         for (let i = 1; i <= appConfig.gridCount; i++) {
-            // 取得該格位的對應座標 (如果超過12格則忽略)
             if (i > layoutMap.length) break;
             const pos = layoutMap[i-1];
             
@@ -392,7 +392,7 @@
                 if (canvasObj) base64Image = canvasObj.toDataURL('image/png');
                 else if (imgObj && imgObj.src) base64Image = imgObj.src;
 
-                // 插入圖片 - 填滿模式 (背景)
+                // 背景填滿模式
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     worksheet.addImage(imageId, {
@@ -414,7 +414,7 @@
         }
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "Custom_Layout_QR.xlsx");
+        saveAs(blob, "Custom_Layout_V3.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
@@ -599,7 +599,7 @@
     
     function saveSettings() {
         appConfig.title = document.getElementById('set-title').value;
-        appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 12;
+        appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 20;
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
         applyLanguage(appConfig.currentLang); 
@@ -621,7 +621,7 @@
             if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
             appConfig.title = parsed.title;
-            appConfig.gridCount = parsed.gridCount || 12;
+            appConfig.gridCount = parsed.gridCount || 20;
             appConfig.currentLang = parsed.currentLang;
             appConfig.availableLangs = parsed.availableLangs;
         }
