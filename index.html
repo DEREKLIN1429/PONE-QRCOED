@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (手動尺寸+滿版列印)</title>
+    <title>QR Code 智慧系統 (完美列印版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -78,17 +78,18 @@
         .setting-group label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; }
         .setting-group select, .setting-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box;}
         
-        /* 手動輸入區塊 */
-        .custom-size-group { display: flex; gap: 10px; margin-top: 5px; }
-        .custom-size-group input { width: 50%; }
+        /* 手動輸入區塊 (修正) */
+        .custom-size-group { display: flex; gap: 5px; margin-top: 5px; align-items: center; }
+        .custom-size-group input { width: 35%; }
+        .custom-size-group select { width: 30%; background-color: #f9f9f9; }
 
-        .preview-box { border: 1px solid #ccc; background: #fff; padding: 10px; margin-top: 20px; text-align: center; }
+        .preview-box { border: 1px solid #ccc; background: #fff; padding: 10px; margin-top: 20px; text-align: center; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .preview-paper {
-            width: 100px; height: 141px; border: 1px solid #333; margin: 0 auto; background: #fff;
-            display: grid; gap: 2px; padding: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            transition: all 0.3s;
+            border: 2px solid #333; background: #fff;
+            display: grid; gap: 2px; padding: 2px; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.2s; box-sizing: border-box;
         }
-        .preview-cell { background: #ccc; border: 1px solid #999; }
+        .preview-cell { background: #e0e0e0; border: 1px solid #999; }
         .preview-info { font-size: 12px; color: #666; margin-top: 10px; }
 
         /* Modal */
@@ -144,8 +145,12 @@
             </select>
             
             <div id="custom-size-inputs" class="custom-size-group" style="display:none;">
-                <input type="number" id="custom-width" placeholder="寬(mm)" value="100" onchange="updatePreview()">
-                <input type="number" id="custom-height" placeholder="高(mm)" value="150" onchange="updatePreview()">
+                <input type="number" id="custom-width" placeholder="寬" value="100" oninput="updatePreview()">
+                <input type="number" id="custom-height" placeholder="高" value="150" oninput="updatePreview()">
+                <select id="custom-unit" onchange="updatePreview()">
+                    <option value="mm">mm</option>
+                    <option value="in">inch</option>
+                </select>
             </div>
         </div>
 
@@ -183,8 +188,7 @@
 
         <div class="preview-box">
             <label style="display:block; margin-bottom:5px; font-weight:bold;">版面示意圖 (預覽)</label>
-            <div id="preview-paper" class="preview-paper">
-                </div>
+            <div id="preview-paper" class="preview-paper" style="width:100px; height:141px;"></div>
             <div id="preview-text" class="preview-info"></div>
         </div>
     </div>
@@ -293,7 +297,6 @@
         }
     }
 
-    // --- 新增：切換手動設定輸入框顯示 ---
     function toggleCustomSize() {
         const size = document.getElementById('print-size').value;
         const customInputs = document.getElementById('custom-size-inputs');
@@ -305,19 +308,30 @@
         updatePreview();
     }
 
-    // --- 更新預覽畫面 ---
+    // --- 修正後的預覽邏輯 ---
     function updatePreview() {
         const paper = document.getElementById('preview-paper');
         const orientation = document.getElementById('print-orientation').value;
         const cols = parseInt(document.getElementById('print-cols').value);
         const size = document.getElementById('print-size').value;
+        const unit = document.getElementById('custom-unit').value; // 讀取單位
         
         let widthMm, heightMm;
 
         // 設定尺寸
         if (size === 'custom') {
-            widthMm = parseFloat(document.getElementById('custom-width').value) || 100;
-            heightMm = parseFloat(document.getElementById('custom-height').value) || 150;
+            // 讀取輸入值，如果為空給一個預設值
+            let rawW = parseFloat(document.getElementById('custom-width').value) || 100;
+            let rawH = parseFloat(document.getElementById('custom-height').value) || 150;
+            
+            // 單位換算
+            if (unit === 'in') {
+                widthMm = rawW * 25.4;
+                heightMm = rawH * 25.4;
+            } else {
+                widthMm = rawW;
+                heightMm = rawH;
+            }
         } else if (size === '9') { // A4
             widthMm = 210; heightMm = 297;
         } else if (size === '1') { // Letter
@@ -331,8 +345,10 @@
             [widthMm, heightMm] = [heightMm, widthMm];
         }
 
-        // 計算預覽框的顯示比例 (固定寬度 140px，高度依比例)
-        const scaleFactor = 140 / widthMm; 
+        // 預覽縮放計算 (最大寬度 150px)
+        const maxWidth = 150;
+        const scaleFactor = maxWidth / widthMm; 
+        
         const displayW = widthMm * scaleFactor;
         const displayH = heightMm * scaleFactor;
 
@@ -350,11 +366,11 @@
             paper.appendChild(div);
         }
 
-        let sizeText = (size === 'custom') ? `手動 ${widthMm}x${heightMm}mm` : (size === "9" ? "A4" : (size === "1" ? "Letter" : "A5"));
+        let sizeText = (size === 'custom') ? `手動 (${Math.round(widthMm)}x${Math.round(heightMm)}mm)` : (size === "9" ? "A4" : (size === "1" ? "Letter" : "A5"));
         document.getElementById('preview-text').innerText = `${sizeText} / ${cols}欄`;
     }
 
-    // --- Excel 匯出 (滿版 + 無標題 + 手動尺寸) ---
+    // --- Excel 匯出 ---
     async function exportExcelWithImages() {
         let hasData = false;
         for(let i=1; i<=appConfig.gridCount; i++){ if(document.getElementById('data-'+i).value.trim() !== "") hasData = true; }
@@ -363,7 +379,6 @@
         const statusDiv = document.getElementById('ocr-status');
         statusDiv.innerText = "⏳ 正在產生 Excel...";
 
-        // 讀取列印設定
         const printSizeVal = document.getElementById('print-size').value;
         const printOrientation = document.getElementById('print-orientation').value;
         const printCols = parseInt(document.getElementById('print-cols').value);
@@ -372,42 +387,41 @@
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('QR Codes');
 
-        // 1. 設定頁面佈局
         let paperSizeId = undefined;
-        if(printSizeVal !== 'custom') {
-            paperSizeId = parseInt(printSizeVal);
-        }
+        if(printSizeVal !== 'custom') paperSizeId = parseInt(printSizeVal);
         
         worksheet.pageSetup = {
-            paperSize: paperSizeId, // 若為 undefined (custom) 則不設定標準紙張 ID
+            paperSize: paperSizeId, 
             orientation: printOrientation,
             fitToPage: false,
         };
 
-        // 2. 設定邊界
-        let marginVal = 0.7; // normal
+        let marginVal = 0.7; 
         if(printMargins === 'narrow') marginVal = 0.25;
         if(printMargins === 'wide') marginVal = 1.0;
         
         worksheet.pageSetup.margins = {
             left: marginVal, right: marginVal,
             top: marginVal, bottom: marginVal,
-            header: 0, footer: 0 // 移除頁首頁尾
+            header: 0, footer: 0 
         };
 
-        // 3. 設定欄寬 (根據欄數調整)
-        // 若是手動尺寸，Excel 很難精準對應 mm，這裡用比例推算
+        // 欄寬計算
         let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
-        
-        // 如果是手動設定，根據輸入的寬度做簡單的權重調整
         if(printSizeVal === 'custom') {
-             let customW = parseFloat(document.getElementById('custom-width').value);
-             // 假設 A4 210mm 對應 85 units -> ratio ~ 0.4
-             totalWidthUnits = customW * 0.4;
+             // 重新計算寬度 (mm)
+             let rawW = parseFloat(document.getElementById('custom-width').value) || 100;
+             let unit = document.getElementById('custom-unit').value;
+             let widthMm = (unit === 'in') ? rawW * 25.4 : rawW;
+             
              if(printOrientation === 'landscape') { 
-                 // 這裡邏輯簡化，Excel custom page size 支援度有限，主要靠列印驅動程式
-                 // 我們盡量讓欄寬比例正確
+                 // 如果是手動設定且轉橫向，要考慮高度當作寬度
+                 let rawH = parseFloat(document.getElementById('custom-height').value) || 150;
+                 let heightMm = (unit === 'in') ? rawH * 25.4 : rawH;
+                 widthMm = heightMm;
              }
+             // 比例換算：A4寬 210mm 約等於 Excel 85 units
+             totalWidthUnits = widthMm * (85 / 210);
         }
 
         let colWidth = Math.floor(totalWidthUnits / printCols);
@@ -415,7 +429,6 @@
         for(let k=0; k<printCols; k++) { colsConfig.push({ width: colWidth }); }
         worksheet.columns = colsConfig;
 
-        // 注意：移除標題列，validItemIndex 從 0 開始，對應到 Excel Row 1
         let validItemIndex = 0; 
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -424,10 +437,9 @@
             if (val !== "") {
                 let colIndex = validItemIndex % printCols; 
                 let rowGroupIndex = Math.floor(validItemIndex / printCols);
-                let imgRowNumber = 1 + (rowGroupIndex * 2); // 從第1列開始
+                let imgRowNumber = 1 + (rowGroupIndex * 2); 
                 let textRowNumber = imgRowNumber + 1;
 
-                // 設定高度
                 worksheet.getRow(imgRowNumber).height = 100;
                 worksheet.getRow(textRowNumber).height = 30;
 
@@ -440,14 +452,10 @@
 
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
-                    
-                    // --- 核心修改：滿版填滿 ---
-                    // 使用 tl (top-left) 和 br (bottom-right) 來定義圖片位置
-                    // colIndex 對應欄位, imgRowNumber-1 對應列索引 (0-based)
                     worksheet.addImage(imageId, {
                         tl: { col: colIndex, row: imgRowNumber - 1 },
-                        br: { col: colIndex + 1, row: imgRowNumber }, // 延伸到下一欄、下一列的邊界
-                        editAs: 'oneCell' // 隨儲存格大小縮放
+                        br: { col: colIndex + 1, row: imgRowNumber }, 
+                        editAs: 'oneCell' 
                     });
                 } else {
                     let cell = worksheet.getCell(imgRowNumber, colIndex + 1);
@@ -470,9 +478,9 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_FullFill.xlsx");
+        saveAs(blob, "QRCode_CustomPrint.xlsx");
         
-        statusDiv.innerText = "✅ Excel 下載完成 (滿版列印)！";
+        statusDiv.innerText = "✅ Excel 下載完成！";
     }
 
     function startQRScan() {
