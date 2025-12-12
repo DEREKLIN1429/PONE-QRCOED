@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (DEREK LIN Final Excel V2)</title>
+    <title>QR Code 智慧系統 (掃描框+精確尺寸)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -62,9 +62,43 @@
         }
         .settings-icon:hover { background: #e0e0e0; }
         
-        #camera-wrapper { width: 100%; max-width: 500px; margin: 0 auto 15px auto; display: none; position: relative; }
-        #reader { width: 100%; border: 4px solid #333; border-radius: 8px; cursor: pointer; background: #000; }
-        .camera-hint { position: absolute; bottom: 5px; left: 0; right: 0; color: white; background: rgba(0,0,0,0.6); padding: 5px; font-size: 12px; pointer-events: none; }
+        /* --- 修正：相機與對準框樣式 --- */
+        #camera-wrapper { 
+            width: 100%; max-width: 500px; margin: 0 auto 15px auto; 
+            display: none; position: relative; overflow: hidden; border-radius: 8px;
+        }
+        #reader { width: 100%; border: none; }
+        
+        /* 掃描對準框 */
+        #scan-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px; height: 250px;
+            border: 4px solid #00ff00; /* 綠色邊框 */
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); /* 背景變暗 */
+            z-index: 10;
+            border-radius: 20px;
+            pointer-events: none; /* 讓點擊穿透 */
+        }
+        /* 掃描線動畫 */
+        #scan-overlay::after {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px;
+            background: #00ff00; box-shadow: 0 0 4px #00ff00;
+            animation: scanning 2s infinite ease-in-out;
+        }
+        @keyframes scanning {
+            0% { top: 10px; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 230px; opacity: 0; }
+        }
+
+        .camera-hint { 
+            position: absolute; bottom: 10px; left: 0; right: 0; 
+            color: white; text-align: center; font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            z-index: 20; pointer-events: none; font-size: 14px;
+        }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
         /* 按鈕群組 */
@@ -174,6 +208,8 @@
             </div>
 
             <div id="camera-wrapper">
+                <div id="scan-overlay"></div>
+                
                 <div id="reader"></div>
                 <div class="camera-hint" data-i18n="camHint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
             </div>
@@ -306,7 +342,7 @@
             <div style="display:flex; gap:5px; align-items:center;">
                 <div style="flex:1;">
                     <label style="font-size:12px;">欄間隔 (Width)</label>
-                    <input type="number" id="def-spacer-w" placeholder="9.20" step="0.1">
+                    <input type="number" id="def-spacer-w" placeholder="1" step="0.1">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:12px;">列間隔 (Height)</label>
@@ -394,8 +430,8 @@
         title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
         defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, // 4x6 inch
-        excelSpacer: { colWidth: 9.20, rowHeight: 10 }, // 預設間隔 (欄寬 9.20)
-        excelFontSize: 5, // 預設字體 5
+        excelSpacer: { colWidth: 1, rowHeight: 10 }, 
+        excelFontSize: 5,
         lastPrintState: null
     };
 
@@ -514,10 +550,12 @@
         }
 
         // 間隔設定
-        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 9.20;
-        let mainColWidth = (totalWidthUnits - (printCols * spacerW)) / printCols;
-        if(mainColWidth < 1) mainColWidth = 10; 
+        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
+        
+        // 修正：QR Code 存放欄寬 (Data Col) 強制為 9.20
+        let mainColWidth = 9.20; 
 
+        // 欄位配置：資料(9.20), 間隔, 資料(9.20), 間隔...
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
             colsConfig.push({ width: mainColWidth }); 
@@ -529,11 +567,13 @@
         worksheet.getRow(1).height = topSpacerH;
 
         let validItemIndex = 0; 
-        const IMG_H = 100;
-        const TXT_H = 5.25; 
+        
+        // 修正：列高設定
+        const IMG_H = 53.25; // QR Code 列高 (針對 1.8cm 圖片)
+        const TXT_H = 5.25;  // 文字列高
         const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 10; 
         
-        // 1.8cm * 1.8cm = ~68 pixels
+        // 修正：1.8cm 圖片尺寸 (1.8/2.54 * 96dpi ~ 68px)
         const QR_PIXELS = 68;
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -577,9 +617,9 @@
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                 textCell.font = { size: appConfig.excelFontSize, bold: true };
 
-                // 移除邊框
+                // 修正：移除框線 (註解掉或設為 null)
                 // let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
-                // imgCell.border = null;
+                // imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
 
                 validItemIndex++;
             }
@@ -779,7 +819,7 @@
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
 
         // 儲存間隔設定 (修正預設值)
-        appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 9.20;
+        appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 1;
         appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 10;
         appConfig.excelFontSize = parseFloat(document.getElementById('def-font-size').value) || 5;
 
@@ -796,7 +836,7 @@
             if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
             if(!parsed.defaultPaper) parsed.defaultPaper = { width: 10.16, height: 15.24, unit: 'cm' };
-            if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 9.20, rowHeight: 10 };
+            if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 1, rowHeight: 10 };
             if(!parsed.excelFontSize) parsed.excelFontSize = 5;
             appConfig = parsed;
         }
