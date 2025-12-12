@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (DEREK LIN Perfect Excel)</title>
+    <title>QR Code 智慧系統 (DEREK LIN Final Excel)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -130,7 +130,7 @@
 
         /* Modal */
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; max-height: 90vh; overflow-y: auto; }
         .modal-footer { text-align: right; margin-top: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
@@ -163,8 +163,7 @@
     <div class="left-column">
         <header>
             <div class="header-top-row">
-                <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)">
-                    </select>
+                <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)"></select>
                 <div class="settings-icon" onclick="openSettings()" title="Settings">⚙️</div>
             </div>
 
@@ -208,6 +207,7 @@
             <label data-i18n="paperSize">紙張大小 (Paper Size)</label>
             <select id="print-size" onchange="onPrintSettingChange()">
                 <option value="custom" data-i18n="optCustom">手動設定 (Custom)</option>
+                <option value="id_card">ID CARD (10.16 x 15.24 cm)</option>
                 <option value="9">A4 (210 x 297 mm)</option>
                 <option value="1">Letter (8.5 x 11 in)</option>
                 <option value="11">A5 (148 x 210 mm)</option>
@@ -303,15 +303,19 @@
         </div>
 
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
-            <label>Excel 間隔設定 (Spacing)：</label>
-            <div style="display:flex; gap:10px; align-items:center;">
+            <label>Excel 間隔 & 字體設定：</label>
+            <div style="display:flex; gap:5px; align-items:center;">
                 <div style="flex:1;">
-                    <label style="font-size:12px;">欄間隔 (Col Width)</label>
+                    <label style="font-size:12px;">欄間隔 (Width)</label>
                     <input type="number" id="def-spacer-w" placeholder="1" step="0.1">
                 </div>
                 <div style="flex:1;">
-                    <label style="font-size:12px;">列間隔 (Row Height)</label>
+                    <label style="font-size:12px;">列間隔 (Height)</label>
                     <input type="number" id="def-spacer-h" placeholder="10" step="1">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:12px;">字體大小 (Font)</label>
+                    <input type="number" id="def-font-size" placeholder="6" step="1">
                 </div>
             </div>
         </div>
@@ -321,8 +325,8 @@
             <div class="lang-manage-list" id="lang-list-container">
                 </div>
             <div class="lang-add-group">
-                <input type="text" id="new-lang-code" placeholder="Code (e.g. jp)">
-                <input type="text" id="new-lang-name" placeholder="Name (e.g. 日本語)">
+                <input type="text" id="new-lang-code" placeholder="Code">
+                <input type="text" id="new-lang-name" placeholder="Name">
                 <button class="btn-sm-add" onclick="addNewLanguage()">Add</button>
             </div>
         </div>
@@ -337,132 +341,62 @@
 <div class="author-info">Author: DEREK LIN</div>
 
 <script>
-    // --- 翻譯字典 ---
     const translations = {
         "zh-TW": {
             appTitle: "QR Code 智慧系統",
             camHint: "👆 點擊畫面：拍照並 OCR 文字辨識",
-            btnScan: "掃描",
-            btnOcr: "圖片 OCR",
-            btnClear: "清除全部",
-            btnExcel: "依設定轉出 EXCEL",
-            btnAdd: "⬇️ 加入",
-            batchPlace: "快速輸入資料 (Enter 可確定)...",
-            printSettings: "🖨️ Excel 列印設定",
-            paperSize: "紙張大小 (Paper Size)",
-            optCustom: "手動設定 (Custom)",
-            orientation: "方向 (Orientation)",
-            optPortrait: "直向 (Portrait)",
-            optLandscape: "橫向 (Landscape)",
-            columns: "每行欄數 (Columns)",
-            margins: "頁面邊距 (Margins)",
+            btnScan: "掃描", btnOcr: "圖片 OCR", btnClear: "清除全部", btnExcel: "依設定轉出 EXCEL",
+            btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料 (Enter 可確定)...",
+            printSettings: "🖨️ Excel 列印設定", paperSize: "紙張大小 (Paper Size)",
+            optCustom: "手動設定 (Custom)", orientation: "方向 (Orientation)",
+            optPortrait: "直向 (Portrait)", optLandscape: "橫向 (Landscape)",
+            columns: "每行欄數 (Columns)", margins: "頁面邊距 (Margins)",
             mTop: "上", mBottom: "下", mLeft: "左", mRight: "右",
-            settingsTitle: "系統設定",
-            lblAppTitle: "主標題名稱：",
-            lblGridCount: "總格數設定：",
-            lblLangManage: "語言管理 (Language Manage)：",
-            btnSave: "儲存",
-            btnCancel: "取消",
-            gridLabel: "格位 ",
-            gridPlace: "待輸入...",
-            alertEmpty: "目前沒有資料可以匯出！",
-            alertFull: "⚠️ 欄位已滿！",
-            statusCam: "相機啟動中... (10秒自動關閉)",
-            statusOCR: "⏳ 正在辨識...",
-            statusDone: "✅ 完成",
-            statusExcel: "⏳ 正在產生 Excel...",
-            statusExcelDone: "✅ Excel 下載完成！"
+            settingsTitle: "系統設定", lblAppTitle: "主標題名稱：", lblGridCount: "總格數設定：", lblLangManage: "語言管理 (Language Manage)：",
+            btnSave: "儲存", btnCancel: "取消", gridLabel: "格位 ", gridPlace: "待輸入...",
+            alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
+            statusCam: "相機啟動中... (10秒自動關閉)", statusOCR: "⏳ 正在辨識...", statusDone: "✅ 完成",
+            statusExcel: "⏳ 正在產生 Excel...", statusExcelDone: "✅ Excel 下載完成！"
         },
         "en-US": {
             appTitle: "Smart QR Code System",
             camHint: "👆 Click: Capture & OCR",
-            btnScan: "Scan",
-            btnOcr: "Image OCR",
-            btnClear: "Clear All",
-            btnExcel: "Export Excel",
-            btnAdd: "⬇️ Add",
-            batchPlace: "Quick input (Press Enter)...",
-            printSettings: "🖨️ Excel Print Settings",
-            paperSize: "Paper Size",
-            optCustom: "Custom Size",
-            orientation: "Orientation",
-            optPortrait: "Portrait",
-            optLandscape: "Landscape",
-            columns: "Columns",
-            margins: "Margins",
+            btnScan: "Scan", btnOcr: "Image OCR", btnClear: "Clear All", btnExcel: "Export Excel",
+            btnAdd: "⬇️ Add", batchPlace: "Quick input (Press Enter)...",
+            printSettings: "🖨️ Excel Print Settings", paperSize: "Paper Size",
+            optCustom: "Custom Size", orientation: "Orientation",
+            optPortrait: "Portrait", optLandscape: "Landscape",
+            columns: "Columns", margins: "Margins",
             mTop: "T", mBottom: "B", mLeft: "L", mRight: "R",
-            settingsTitle: "System Settings",
-            lblAppTitle: "App Title:",
-            lblGridCount: "Grid Count:",
-            lblLangManage: "Language Manage:",
-            btnSave: "Save",
-            btnCancel: "Cancel",
-            gridLabel: "Slot ",
-            gridPlace: "Waiting...",
-            alertEmpty: "No data to export!",
-            alertFull: "⚠️ Grid is full!",
-            statusCam: "Camera active... (10s auto-off)",
-            statusOCR: "⏳ Processing...",
-            statusDone: "✅ Done",
-            statusExcel: "⏳ Generating Excel...",
-            statusExcelDone: "✅ Download Complete!"
+            settingsTitle: "System Settings", lblAppTitle: "App Title:", lblGridCount: "Grid Count:", lblLangManage: "Language Manage:",
+            btnSave: "Save", btnCancel: "Cancel", gridLabel: "Slot ", gridPlace: "Waiting...",
+            alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
+            statusCam: "Camera active... (10s auto-off)", statusOCR: "⏳ Processing...", statusDone: "✅ Done",
+            statusExcel: "⏳ Generating Excel...", statusExcelDone: "✅ Download Complete!"
         },
         "hi-IN": {
-            appTitle: "QR कोड स्मार्ट सिस्टम",
-            camHint: "👆 क्लिक करें: फोटो और OCR",
-            btnScan: "स्कैन करें",
-            btnOcr: "छवि OCR",
-            btnClear: "सभी साफ़ करें",
-            btnExcel: "एक्सेल निर्यात करें",
-            btnAdd: "⬇️ जोड़ें",
-            batchPlace: "डेटा दर्ज करें (Enter दबाएं)...",
-            printSettings: "🖨️ प्रिंट सेटिंग्स",
-            paperSize: "कागज का आकार",
-            optCustom: "कस्टम आकार",
-            orientation: "दिशा",
-            optPortrait: "पोर्ट्रेट",
-            optLandscape: "लैंडस्केप",
-            columns: "कॉलम",
-            margins: "हाशिए (Margins)",
+            appTitle: "QR कोड स्मार्ट सिस्टम", camHint: "👆 क्लिक करें: फोटो और OCR",
+            btnScan: "स्कैन करें", btnOcr: "छवि OCR", btnClear: "सभी साफ़ करें", btnExcel: "एक्सेल निर्यात करें",
+            btnAdd: "⬇️ जोड़ें", batchPlace: "डेटा दर्ज करें (Enter दबाएं)...",
+            printSettings: "🖨️ प्रिंट सेटिंग्स", paperSize: "कागज का आकार",
+            optCustom: "कस्टम आकार", orientation: "दिशा",
+            optPortrait: "पोर्ट्रेट", optLandscape: "लैंडस्केप",
+            columns: "कॉलम", margins: "हाशिए (Margins)",
             mTop: "ऊपर", mBottom: "नीचे", mLeft: "बायां", mRight: "दायां",
-            settingsTitle: "सिस्टम सेटिंग्स",
-            lblAppTitle: "शीर्षक:",
-            lblGridCount: "ग्रिड संख्या:",
-            lblLangManage: "भाषा प्रबंधन:",
-            btnSave: "सहेजें",
-            btnCancel: "रद्द करें",
-            gridLabel: "स्लॉट ",
-            gridPlace: "प्रतीक्षारत...",
-            alertEmpty: "निर्यात के लिए कोई डेटा नहीं!",
-            alertFull: "⚠️ ग्रिड भर गया है!",
-            statusCam: "कैमरा सक्रिय... (10s ऑटो-बंद)",
-            statusOCR: "⏳ प्रक्रिया जारी...",
-            statusDone: "✅ हो गया",
-            statusExcel: "⏳ एक्सेल बना रहा है...",
-            statusExcelDone: "✅ डाउनलोड पूर्ण!"
+            settingsTitle: "सिस्टम सेटिंग्स", lblAppTitle: "शीर्षक:", lblGridCount: "ग्रिड संख्या:", lblLangManage: "भाषा प्रबंधन:",
+            btnSave: "सहेजें", btnCancel: "रद्द करें", gridLabel: "स्लॉट ", gridPlace: "प्रतीक्षारत...",
+            alertEmpty: "निर्यात के लिए कोई डेटा नहीं!", alertFull: "⚠️ ग्रिड भर गया है!",
+            statusCam: "कैमरा सक्रिय...", statusOCR: "⏳ प्रक्रिया जारी...", statusDone: "✅ हो गया",
+            statusExcel: "⏳ एक्सेल बना रहा है...", statusExcelDone: "✅ डाउनलोड पूर्ण!"
         }
     };
 
     let appConfig = { 
-        title: "QR Code 智慧系統", 
-        gridCount: 12, 
-        currentLang: "zh-TW",
-        availableLangs: [
-            { code: "zh-TW", name: "繁體中文" },
-            { code: "en-US", name: "English" },
-            { code: "hi-IN", name: "हिन्दी (Hindi)" }
-        ],
-        // 預設自訂紙張 (設定內) -> 10.16 x 15.24 cm
-        defaultPaper: {
-            width: 10.16,
-            height: 15.24,
-            unit: 'cm'
-        },
-        // Excel 間隔設定 (預設 1, 10)
-        excelSpacer: {
-            colWidth: 1,
-            rowHeight: 10
-        },
+        title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
+        availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
+        defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, // 預設 4x6
+        excelSpacer: { colWidth: 1, rowHeight: 10 }, // 預設間隔
+        excelFontSize: 6, // 預設文字大小
         lastPrintState: null
     };
 
@@ -470,15 +404,9 @@
     let scanTimeout; 
 
     window.onload = function() { 
-        loadConfig(); 
-        initLangSelect(); 
-        applyLanguage(appConfig.currentLang);
-        initGrid(); 
-        initPrintSettings(); 
-        
-        document.getElementById('batch-input').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') processBatchInput();
-        });
+        loadConfig(); initLangSelect(); applyLanguage(appConfig.currentLang);
+        initGrid(); initPrintSettings(); 
+        document.getElementById('batch-input').addEventListener('keydown', function(event) { if (event.key === 'Enter') processBatchInput(); });
     };
 
     function initPrintSettings() {
@@ -491,21 +419,17 @@
             cols: 3,
             margins: { t:0, b:0, l:0, r:0, unit:'cm' } 
         };
-
         document.getElementById('print-size').value = p.size;
         document.getElementById('print-orientation').value = p.orientation;
         document.getElementById('print-cols').value = p.cols;
-
         document.getElementById('custom-width').value = p.customW || appConfig.defaultPaper.width;
         document.getElementById('custom-height').value = p.customH || appConfig.defaultPaper.height;
         document.getElementById('custom-unit').value = p.customUnit || appConfig.defaultPaper.unit;
-        
         document.getElementById('margin-top').value = p.margins.t;
         document.getElementById('margin-bottom').value = p.margins.b;
         document.getElementById('margin-left').value = p.margins.l;
         document.getElementById('margin-right').value = p.margins.r;
         document.getElementById('margin-unit').value = p.margins.unit;
-
         toggleCustomSize(); 
     }
 
@@ -526,15 +450,15 @@
             }
         };
         appConfig.lastPrintState = state;
-        saveSettingsDirectly(); 
-        toggleCustomSize();
+        saveSettingsDirectly(); toggleCustomSize();
     }
 
     function toggleCustomSize() {
         const size = document.getElementById('print-size').value;
         const customInputs = document.getElementById('custom-size-inputs');
-        if (size === 'custom') {
-            customInputs.style.display = 'flex';
+        if (size === 'custom' || size === 'id_card') {
+             if(size === 'id_card') customInputs.style.display = 'none';
+             else customInputs.style.display = 'flex';
         } else {
             customInputs.style.display = 'none';
         }
@@ -549,7 +473,6 @@
         const statusDiv = document.getElementById('ocr-status');
         statusDiv.innerText = t.statusExcel;
 
-        // 讀取 UI 設定
         const printSizeVal = document.getElementById('print-size').value;
         const printOrientation = document.getElementById('print-orientation').value;
         const printCols = parseInt(document.getElementById('print-cols').value);
@@ -558,72 +481,46 @@
         const worksheet = workbook.addWorksheet('QR Codes');
 
         let paperSizeId = undefined;
-        if(printSizeVal !== 'custom') paperSizeId = parseInt(printSizeVal);
+        if(printSizeVal !== 'custom' && printSizeVal !== 'id_card') paperSizeId = parseInt(printSizeVal);
         
-        // 設定 Page Setup
-        worksheet.pageSetup = {
-            paperSize: paperSizeId, 
-            orientation: printOrientation,
-            fitToPage: false,
-        };
+        worksheet.pageSetup = { paperSize: paperSizeId, orientation: printOrientation, fitToPage: false };
 
-        // 設定邊界
         const marginUnit = document.getElementById('margin-unit').value;
-        const mTop = parseFloat(document.getElementById('margin-top').value) || 0;
-        const mBot = parseFloat(document.getElementById('margin-bottom').value) || 0;
-        const mLeft = parseFloat(document.getElementById('margin-left').value) || 0;
-        const mRight = parseFloat(document.getElementById('margin-right').value) || 0;
-
-        const toInches = (val, unit) => {
-            if (unit === 'cm') return val / 2.54;
-            if (unit === 'mm') return val / 25.4;
-            return val;
-        };
-
+        const toInches = (val) => (marginUnit === 'cm' ? val/2.54 : (marginUnit === 'mm' ? val/25.4 : val));
+        
         worksheet.pageSetup.margins = {
-            top: toInches(mTop, marginUnit),
-            bottom: toInches(mBot, marginUnit),
-            left: toInches(mLeft, marginUnit),
-            right: toInches(mRight, marginUnit),
+            top: toInches(parseFloat(document.getElementById('margin-top').value)||0),
+            bottom: toInches(parseFloat(document.getElementById('margin-bottom').value)||0),
+            left: toInches(parseFloat(document.getElementById('margin-left').value)||0),
+            right: toInches(parseFloat(document.getElementById('margin-right').value)||0),
             header: 0, footer: 0 
         };
 
-        // 欄寬計算
         let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
-        if(printSizeVal === 'custom') {
-             let rawW = parseFloat(document.getElementById('custom-width').value) || 10.16;
-             let cUnit = document.getElementById('custom-unit').value;
-             // 統一轉為 cm 計算比例
-             let wCm = rawW;
-             if(cUnit === 'in') wCm = rawW * 2.54;
-             if(cUnit === 'mm') wCm = rawW / 10;
-             
-             if(printOrientation === 'landscape') { 
+        if(printSizeVal === 'custom' || printSizeVal === 'id_card') {
+             let wCm, hCm;
+             if(printSizeVal === 'id_card') { wCm = 10.16; hCm = 15.24; } 
+             else {
+                 let rawW = parseFloat(document.getElementById('custom-width').value) || 10.16;
+                 let cUnit = document.getElementById('custom-unit').value;
+                 wCm = (cUnit==='in') ? rawW*2.54 : (cUnit==='mm' ? rawW/10 : rawW);
                  let rawH = parseFloat(document.getElementById('custom-height').value) || 15.24;
-                 let hCm = rawH;
-                 if(cUnit === 'in') hCm = rawH * 2.54;
-                 if(cUnit === 'mm') hCm = rawH / 10;
-                 wCm = hCm;
+                 let hCmRaw = (cUnit==='in') ? rawH*2.54 : (cUnit==='mm' ? rawH/10 : rawH);
+                 if(printOrientation === 'landscape') { let temp = wCm; wCm = hCmRaw; hCm = temp; }
              }
-             // 粗略換算: A4 寬 21cm ~ 85 Excel units
              totalWidthUnits = wCm * (85 / 21);
         }
 
         // 間隔設定
         let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
-        
-        // 總空間扣除間隔欄
-        // 間隔欄數量 = printCols (因為最右邊也加一欄)
-        // mainWidth * printCols + spacerW * printCols = totalWidthUnits
-        let availableW = totalWidthUnits - (printCols * spacerW);
-        let mainColWidth = availableW / printCols;
+        let mainColWidth = (totalWidthUnits - (printCols * spacerW)) / printCols;
         if(mainColWidth < 1) mainColWidth = 10; 
 
-        // 設定 Columns (資料欄, 間隔欄, 資料欄...)
+        // 欄位配置：資料, 間隔, 資料, 間隔...
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
             colsConfig.push({ width: mainColWidth }); 
-            colsConfig.push({ width: spacerW }); // 每一欄右側都加間隔
+            colsConfig.push({ width: spacerW }); // 每一欄右邊都加間隔
         }
         worksheet.columns = colsConfig;
 
@@ -633,19 +530,17 @@
 
         let validItemIndex = 0; 
         const IMG_H = 100;
-        const TXT_H = 30;
-        const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 10; // 列間隔高度
+        const TXT_H = 15; // 修正後的文字列高
+        const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 10; 
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
             if (val !== "") {
                 let colGridIndex = validItemIndex % printCols; 
                 let rowGridIndex = Math.floor(validItemIndex / printCols);
-
-                // Excel Column Index
                 let excelColIndex = colGridIndex * 2; 
 
-                // Row Numbers
+                // Row Numbers (+2 因為 Row 1 是頂部空白)
                 let imgRowNumber = 2 + (rowGridIndex * 3); 
                 let textRowNumber = imgRowNumber + 1;
                 let spacerRowNumber = imgRowNumber + 2;
@@ -677,8 +572,10 @@
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex + 1);
                 textCell.value = val;
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-                textCell.font = { size: 12, bold: true };
+                // 使用設定的字體大小
+                textCell.font = { size: appConfig.excelFontSize, bold: true };
 
+                // 邊框
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
                 imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
                 textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
@@ -690,11 +587,10 @@
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         saveAs(blob, "QRCode_Final.xlsx");
-        
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- 標準功能 ---
+    // --- 其他功能 (省略重複部分，保持核心邏輯) ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -706,11 +602,7 @@
         select.value = appConfig.currentLang;
         updateLangManageList();
     }
-    function changeLanguage(langCode) {
-        appConfig.currentLang = langCode;
-        applyLanguage(langCode);
-        saveSettingsDirectly();
-    }
+    function changeLanguage(langCode) { appConfig.currentLang = langCode; applyLanguage(langCode); saveSettingsDirectly(); }
     function applyLanguage(langCode) {
         const t = translations[langCode] || translations["en-US"] || translations["zh-TW"];
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -736,10 +628,8 @@
     function addNewLanguage() {
         const code = document.getElementById('new-lang-code').value.trim();
         const name = document.getElementById('new-lang-name').value.trim();
-        if(!code || !name) { alert("Code and Name required!"); return; }
+        if(!code || !name) { alert("Required!"); return; }
         appConfig.availableLangs.push({ code: code, name: name });
-        document.getElementById('new-lang-code').value = "";
-        document.getElementById('new-lang-name').value = "";
         updateLangManageList();
         const select = document.getElementById('main-lang-select');
         let option = document.createElement('option');
@@ -747,28 +637,21 @@
         select.appendChild(option);
     }
     function removeLanguage(index) {
-        if(!confirm("Delete this language option?")) return;
-        const removed = appConfig.availableLangs.splice(index, 1);
-        if (removed[0].code === appConfig.currentLang && appConfig.availableLangs.length > 0) {
-            appConfig.currentLang = appConfig.availableLangs[0].code;
-            changeLanguage(appConfig.currentLang);
-        }
-        updateLangManageList();
-        initLangSelect();
+        if(!confirm("Delete?")) return;
+        appConfig.availableLangs.splice(index, 1);
+        if (appConfig.availableLangs.length > 0) changeLanguage(appConfig.availableLangs[0].code);
+        updateLangManageList(); initLangSelect();
     }
-
     function initGrid() {
         const gridContainer = document.getElementById('main-grid');
         gridContainer.innerHTML = ""; 
         const t = translations[appConfig.currentLang] || translations["en-US"];
         document.getElementById('app-title').innerText = appConfig.title;
-
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let itemDiv = document.createElement('div');
             itemDiv.className = 'grid-item';
             let label = document.createElement('div');
-            label.className = 'grid-label';
-            label.innerText = (t.gridLabel || "Slot ") + i;
+            label.className = 'grid-label'; label.innerText = (t.gridLabel || "Slot ") + i;
             let input = document.createElement('input');
             input.type = 'text'; input.className = 'grid-input'; input.id = 'data-' + i;
             input.placeholder = t.gridPlace || "Waiting...";
@@ -810,7 +693,7 @@
         inputField.value = "";
     }
     function fillData(text) {
-        if (!confirm("Data: \n" + text + "\n\nConfirm?")) return;
+        if (!confirm("Confirm data: \n" + text)) return;
         let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
         const t = translations[appConfig.currentLang] || translations["en-US"];
         for (let part of parts) {
@@ -878,10 +761,9 @@
         document.getElementById('def-paper-w').value = appConfig.defaultPaper.width;
         document.getElementById('def-paper-h').value = appConfig.defaultPaper.height;
         document.getElementById('def-paper-unit').value = appConfig.defaultPaper.unit;
-        // 載入間隔設定
         document.getElementById('def-spacer-w').value = appConfig.excelSpacer.colWidth;
         document.getElementById('def-spacer-h').value = appConfig.excelSpacer.rowHeight;
-
+        document.getElementById('def-font-size').value = appConfig.excelFontSize;
         updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
@@ -895,9 +777,9 @@
         appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 15.24;
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
 
-        // 儲存間隔設定
         appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 1;
         appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 10;
+        appConfig.excelFontSize = parseFloat(document.getElementById('def-font-size').value) || 6;
 
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
@@ -913,6 +795,7 @@
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
             if(!parsed.defaultPaper) parsed.defaultPaper = { width: 10.16, height: 15.24, unit: 'cm' };
             if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 1, rowHeight: 10 };
+            if(!parsed.excelFontSize) parsed.excelFontSize = 6;
             appConfig = parsed;
         }
     }
