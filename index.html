@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (DEREK LIN 版)</title>
+    <title>QR Code 智慧系統 (DEREK LIN Final)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -24,28 +24,42 @@
             display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start;
         }
         .left-column { flex: 1; min-width: 300px; width: 100%; }
+        
+        /* 右側面板 (電腦版) */
         .right-column {
             width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content;
         }
+
+        /* 手機版 RWD 修正：讓列印設定跑到下方 */
         @media (max-width: 900px) {
             .main-layout { flex-direction: column; }
-            .right-column { width: 100%; box-sizing: border-box; position: static; order: -1; }
+            .right-column { 
+                width: 100%; 
+                box-sizing: border-box; 
+                position: static; 
+                order: 2; /* 強制排在後面 (下方) */
+            }
+            .left-column { order: 1; }
         }
 
-        /* 樣式 */
-        header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; position: relative; }
-        h2 { color: #333; margin: 10px 0 20px 0; font-size: 1.5rem; text-align: center; }
-        
-        /* 頂部控制區 (設定 icon + 語言選單) */
-        .top-controls {
-            position: absolute; top: 0; right: 0; display: flex; gap: 10px; align-items: center; z-index: 100;
+        /* 頂部 Header 優化，避免遮擋 */
+        header { 
+            display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; 
+            background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
+        
+        .header-top-row {
+            width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px;
+        }
+
+        h2 { color: #333; margin: 0 0 15px 0; font-size: 1.5rem; text-align: center; width: 100%; line-height: 1.4; }
+        
         .lang-select {
             padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff;
         }
         .settings-icon { 
-            font-size: 24px; cursor: pointer; background: #fff; padding: 5px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px 10px; border-radius: 20px; 
         }
         
         #camera-wrapper { width: 100%; max-width: 500px; margin: 0 auto 15px auto; display: none; position: relative; }
@@ -69,7 +83,7 @@
         .btn-clear { background-color: #dc3545; }
         button:active { transform: scale(0.98); }
 
-        .batch-input-container { width: 100%; display: flex; gap: 10px; margin-bottom: 20px; }
+        .batch-input-container { width: 100%; display: flex; gap: 10px; margin-bottom: 10px; }
         .batch-input { flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; }
         .btn-batch-add { background-color: #28a745; color: white; border: none; border-radius: 8px; padding: 0 20px; font-size: 16px; font-weight: bold; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15); }
 
@@ -130,14 +144,19 @@
     
     <div class="left-column">
         <header>
-            <div class="top-controls">
+            <div class="header-top-row">
                 <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)">
                     </select>
-                <div class="settings-icon" onclick="openSettings()">⚙️</div>
+                <div class="settings-icon" onclick="openSettings()">⚙️ 設定</div>
             </div>
 
             <h2 id="app-title" data-i18n="appTitle">QR Code 智慧系統</h2>
             
+            <div class="batch-input-container">
+                <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料 (Enter 可確定)..." data-i18n-ph="batchPlace">
+                <button class="btn-batch-add" onclick="processBatchInput()" data-i18n="btnAdd">⬇️ 加入</button>
+            </div>
+
             <div id="camera-wrapper">
                 <div id="reader"></div>
                 <div class="camera-hint" data-i18n="camHint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
@@ -155,11 +174,6 @@
                     <span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span>
                 </button>
                 <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
-            </div>
-
-            <div class="batch-input-container">
-                <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料 (Enter 可確定)..." data-i18n-ph="batchPlace">
-                <button class="btn-batch-add" onclick="processBatchInput()" data-i18n="btnAdd">⬇️ 加入</button>
             </div>
         </header>
 
@@ -273,7 +287,7 @@
 <div class="author-info">Author: DEREK LIN</div>
 
 <script>
-    // --- 翻譯字典 ---
+    // --- 翻譯字典 (含印地文) ---
     const translations = {
         "zh-TW": {
             appTitle: "QR Code 智慧系統",
@@ -342,6 +356,40 @@
             statusDone: "✅ Done",
             statusExcel: "⏳ Generating Excel...",
             statusExcelDone: "✅ Download Complete!"
+        },
+        "hi-IN": {
+            appTitle: "QR कोड स्मार्ट सिस्टम",
+            camHint: "👆 क्लिक करें: फोटो और OCR",
+            btnScan: "स्कैन करें",
+            btnOcr: "छवि OCR",
+            btnClear: "सभी साफ़ करें",
+            btnExcel: "एक्सेल निर्यात करें",
+            btnAdd: "⬇️ जोड़ें",
+            batchPlace: "डेटा दर्ज करें (Enter दबाएं)...",
+            printSettings: "🖨️ प्रिंट सेटिंग्स",
+            paperSize: "कागज का आकार",
+            optCustom: "कस्टम आकार",
+            orientation: "दिशा",
+            optPortrait: "पोर्ट्रेट",
+            optLandscape: "लैंडस्केप",
+            columns: "कॉलम",
+            margins: "हाशिए (Margins)",
+            mTop: "ऊपर", mBottom: "नीचे", mLeft: "बायां", mRight: "दायां",
+            settingsTitle: "सिस्टम सेटिंग्स",
+            lblAppTitle: "शीर्षक:",
+            lblGridCount: "ग्रिड संख्या:",
+            lblLangManage: "भाषा प्रबंधन:",
+            btnSave: "सहेजें",
+            btnCancel: "रद्द करें",
+            gridLabel: "स्लॉट ",
+            gridPlace: "प्रतीक्षारत...",
+            alertEmpty: "निर्यात के लिए कोई डेटा नहीं!",
+            alertFull: "⚠️ ग्रिड भर गया है!",
+            statusCam: "कैमरा सक्रिय... (10s ऑटो-बंद)",
+            statusOCR: "⏳ प्रक्रिया जारी...",
+            statusDone: "✅ हो गया",
+            statusExcel: "⏳ एक्सेल बना रहा है...",
+            statusExcelDone: "✅ डाउनलोड पूर्ण!"
         }
     };
 
@@ -349,10 +397,10 @@
         title: "QR Code 智慧系統", 
         gridCount: 12, 
         currentLang: "zh-TW",
-        // 預設可用語言列表
         availableLangs: [
             { code: "zh-TW", name: "繁體中文" },
-            { code: "en-US", name: "English" }
+            { code: "en-US", name: "English" },
+            { code: "hi-IN", name: "हिन्दी (Hindi)" }
         ]
     };
 
@@ -361,26 +409,20 @@
 
     window.onload = function() { 
         loadConfig(); 
-        initLangSelect(); // 初始化語言選單
-        applyLanguage(appConfig.currentLang); // 套用語言
+        initLangSelect(); 
+        applyLanguage(appConfig.currentLang);
         initGrid(); 
-        
-        // --- 新增：Enter 鍵監聽 ---
         document.getElementById('batch-input').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                processBatchInput();
-            }
+            if (event.key === 'Enter') processBatchInput();
         });
     };
 
-    // --- 語言功能 ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
         appConfig.availableLangs.forEach(lang => {
             let option = document.createElement('option');
-            option.value = lang.code;
-            option.text = lang.name;
+            option.value = lang.code; option.text = lang.name;
             select.appendChild(option);
         });
         select.value = appConfig.currentLang;
@@ -390,42 +432,29 @@
     function changeLanguage(langCode) {
         appConfig.currentLang = langCode;
         applyLanguage(langCode);
-        saveSettingsDirectly(); // 記錄使用者選擇
+        saveSettingsDirectly();
     }
 
     function applyLanguage(langCode) {
-        // 如果該語言沒有定義字典，回退到英文或中文
         const t = translations[langCode] || translations["en-US"] || translations["zh-TW"];
-        
-        // 更新有 data-i18n 的元素
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (t[key]) el.innerText = t[key];
         });
-
-        // 更新 Placeholder
         document.querySelectorAll('[data-i18n-ph]').forEach(el => {
             const key = el.getAttribute('data-i18n-ph');
             if (t[key]) el.placeholder = t[key];
         });
-
-        // 更新標題 (如果使用者沒改過標題，就跟著語言變)
-        // 這裡邏輯：如果標題等於預設的翻譯標題，切換時就跟著變，否則保留使用者自訂
-        // 但為了簡單，這裡直接更新 UI 上的顯示，實際 input value 在 settings modal 打開時更新
-        document.getElementById('app-title').innerText = appConfig.title; // 這裡還是以 config 為主
+        document.getElementById('app-title').innerText = appConfig.title; 
     }
 
-    // --- 語言管理 (新增/刪除) ---
     function updateLangManageList() {
         const container = document.getElementById('lang-list-container');
         container.innerHTML = "";
         appConfig.availableLangs.forEach((lang, index) => {
             let div = document.createElement('div');
             div.className = 'lang-item';
-            div.innerHTML = `
-                <span>${lang.name} (${lang.code})</span>
-                ${appConfig.availableLangs.length > 1 ? `<button class="btn-sm-del" onclick="removeLanguage(${index})">Del</button>` : ''}
-            `;
+            div.innerHTML = `<span>${lang.name} (${lang.code})</span>${appConfig.availableLangs.length > 1 ? `<button class="btn-sm-del" onclick="removeLanguage(${index})">Del</button>` : ''}`;
             container.appendChild(div);
         });
     }
@@ -434,13 +463,10 @@
         const code = document.getElementById('new-lang-code').value.trim();
         const name = document.getElementById('new-lang-name').value.trim();
         if(!code || !name) { alert("Code and Name required!"); return; }
-        
         appConfig.availableLangs.push({ code: code, name: name });
         document.getElementById('new-lang-code').value = "";
         document.getElementById('new-lang-name').value = "";
-        
         updateLangManageList();
-        // 重新整理主選單
         const select = document.getElementById('main-lang-select');
         let option = document.createElement('option');
         option.value = code; option.text = name;
@@ -450,57 +476,37 @@
     function removeLanguage(index) {
         if(!confirm("Delete this language option?")) return;
         const removed = appConfig.availableLangs.splice(index, 1);
-        
-        // 如果刪除的是目前選中的，切換回第一個
         if (removed[0].code === appConfig.currentLang && appConfig.availableLangs.length > 0) {
             appConfig.currentLang = appConfig.availableLangs[0].code;
             changeLanguage(appConfig.currentLang);
         }
-        
         updateLangManageList();
-        initLangSelect(); // 重繪主選單
+        initLangSelect();
     }
-
 
     function initGrid() {
         const gridContainer = document.getElementById('main-grid');
         gridContainer.innerHTML = ""; 
-        
-        // 使用翻譯
         const t = translations[appConfig.currentLang] || translations["en-US"];
         document.getElementById('app-title').innerText = appConfig.title;
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let itemDiv = document.createElement('div');
             itemDiv.className = 'grid-item';
-
             let label = document.createElement('div');
             label.className = 'grid-label';
-            label.innerText = (t.gridLabel || "Slot ") + i; // i18n label
-
+            label.innerText = (t.gridLabel || "Slot ") + i;
             let input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'grid-input';
-            input.id = 'data-' + i;
-            input.placeholder = t.gridPlace || "Waiting..."; // i18n placeholder
+            input.type = 'text'; input.className = 'grid-input'; input.id = 'data-' + i;
+            input.placeholder = t.gridPlace || "Waiting...";
             input.onkeyup = function() { generateSingleCode(i); };
-
             let codeDiv = document.createElement('div');
-            codeDiv.id = 'code-container-' + i;
-            codeDiv.className = 'code-display-area';
-            
+            codeDiv.id = 'code-container-' + i; codeDiv.className = 'code-display-area';
             let imgContent = document.createElement('div');
-            imgContent.id = 'code-img-' + i; 
-            codeDiv.appendChild(imgContent);
-
+            imgContent.id = 'code-img-' + i; codeDiv.appendChild(imgContent);
             let textDiv = document.createElement('div');
-            textDiv.id = 'text-info-' + i;
-            textDiv.className = 'qr-text-info';
-
-            itemDiv.appendChild(label);
-            itemDiv.appendChild(input);
-            itemDiv.appendChild(codeDiv);
-            itemDiv.appendChild(textDiv);
+            textDiv.id = 'text-info-' + i; textDiv.className = 'qr-text-info';
+            itemDiv.appendChild(label); itemDiv.appendChild(input); itemDiv.appendChild(codeDiv); itemDiv.appendChild(textDiv);
             gridContainer.appendChild(itemDiv);
         }
     }
@@ -509,8 +515,7 @@
         let inputVal = document.getElementById('data-' + index).value.trim();
         let container = document.getElementById('code-img-' + index);
         let textContainer = document.getElementById('text-info-' + index);
-        container.innerHTML = ""; 
-        textContainer.innerText = inputVal;
+        container.innerHTML = ""; textContainer.innerText = inputVal;
         if (inputVal === "") { container.innerText = "(Empty)"; return; }
         try { new QRCode(container, { text: inputVal, width: 100, height: 100, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M }); } catch(e) {}
     }
@@ -518,11 +523,9 @@
     function processBatchInput() {
         let inputField = document.getElementById('batch-input');
         let text = inputField.value.trim();
-        if (!text) { return; } // 空值不處理
+        if (!text) return;
         let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
-        
         const t = translations[appConfig.currentLang] || translations["en-US"];
-
         for (let part of parts) {
             let placed = false;
             for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -537,12 +540,9 @@
     }
 
     function fillData(text) {
-        // 簡單提示，不使用 i18n 複雜邏輯，直接用通用符號
         if (!confirm("Data: \n" + text + "\n\nConfirm?")) return;
         let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
-        
         const t = translations[appConfig.currentLang] || translations["en-US"];
-        
         for (let part of parts) {
             let placed = false;
             for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -558,16 +558,12 @@
     function toggleCustomSize() {
         const size = document.getElementById('print-size').value;
         const customInputs = document.getElementById('custom-size-inputs');
-        if (size === 'custom') {
-            customInputs.style.display = 'flex';
-        } else {
-            customInputs.style.display = 'none';
-        }
+        if (size === 'custom') customInputs.style.display = 'flex'; else customInputs.style.display = 'none';
     }
 
+    // --- Excel 匯出 (含間隔) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
-        
         let hasData = false;
         for(let i=1; i<=appConfig.gridCount; i++){ if(document.getElementById('data-'+i).value.trim() !== "") hasData = true; }
         if(!hasData) { alert(t.alertEmpty); return; }
@@ -578,6 +574,7 @@
         const printSizeVal = document.getElementById('print-size').value;
         const printOrientation = document.getElementById('print-orientation').value;
         const printCols = parseInt(document.getElementById('print-cols').value);
+        const printMargins = document.getElementById('print-margins').value;
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('QR Codes');
@@ -585,6 +582,7 @@
         let paperSizeId = undefined;
         if(printSizeVal !== 'custom') paperSizeId = parseInt(printSizeVal);
         
+        // 設定 Page Setup
         worksheet.pageSetup = {
             paperSize: paperSizeId, 
             orientation: printOrientation,
@@ -607,6 +605,7 @@
             header: 0, footer: 0 
         };
 
+        // 欄寬計算
         let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
         if(printSizeVal === 'custom') {
              let rawW = parseFloat(document.getElementById('custom-width').value) || 100;
@@ -620,23 +619,50 @@
              totalWidthUnits = widthMm * (85 / 210);
         }
 
-        let colWidth = Math.floor(totalWidthUnits / printCols);
+        let mainColWidth = Math.floor(totalWidthUnits / printCols);
+        
+        // --- 設定欄位 (含間隔欄) ---
+        // 欄位順序: Data, Spacer, Data, Spacer...
+        // 總欄數 = printCols + (printCols-1)
         let colsConfig = [];
-        for(let k=0; k<printCols; k++) { colsConfig.push({ width: colWidth }); }
+        for(let k=0; k<printCols; k++) { 
+            colsConfig.push({ width: mainColWidth }); // 資料欄
+            if (k < printCols - 1) {
+                colsConfig.push({ width: 0.5 }); // 間隔欄 (寬度 0.5)
+            }
+        }
         worksheet.columns = colsConfig;
 
         let validItemIndex = 0; 
+        // 圖片列高度 100, 文字列高度 30, 間隔列高度 9
+        const IMG_H = 100;
+        const TXT_H = 30;
+        const SPACE_H = 9;
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
             if (val !== "") {
-                let colIndex = validItemIndex % printCols; 
-                let rowGroupIndex = Math.floor(validItemIndex / printCols);
-                let imgRowNumber = 1 + (rowGroupIndex * 2); 
-                let textRowNumber = imgRowNumber + 1;
+                // 計算在網格中的位置 (x, y)
+                let colGridIndex = validItemIndex % printCols; 
+                let rowGridIndex = Math.floor(validItemIndex / printCols);
 
-                worksheet.getRow(imgRowNumber).height = 100;
-                worksheet.getRow(textRowNumber).height = 30;
+                // 換算成 Excel 座標
+                // Column: 每個資料佔2欄(本身+間隔)，除了最後一個。所以 index = colGridIndex * 2
+                // 但是 ExcelJS 是 1-based columns 存取，陣列是 0-based。
+                // 這裡 colIndex 代表的是 colsConfig 陣列的 index
+                let excelColIndex = colGridIndex * 2; 
+
+                // Row: 每組資料佔3列(圖+文+間隔)。
+                // Group 0: Row 1(Img), Row 2(Txt), Row 3(Space)
+                // Group 1: Row 4(Img), Row 5(Txt), Row 6(Space)
+                let imgRowNumber = 1 + (rowGridIndex * 3); 
+                let textRowNumber = imgRowNumber + 1;
+                let spaceRowNumber = imgRowNumber + 2;
+
+                // 設定高度
+                worksheet.getRow(imgRowNumber).height = IMG_H;
+                worksheet.getRow(textRowNumber).height = TXT_H;
+                worksheet.getRow(spaceRowNumber).height = SPACE_H; // 間隔列
 
                 let containerDiv = document.getElementById('code-img-' + i);
                 let canvasObj = containerDiv.querySelector('canvas');
@@ -648,22 +674,22 @@
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     worksheet.addImage(imageId, {
-                        tl: { col: colIndex, row: imgRowNumber - 1 },
-                        br: { col: colIndex + 1, row: imgRowNumber }, 
+                        tl: { col: excelColIndex, row: imgRowNumber - 1 },
+                        br: { col: excelColIndex + 1, row: imgRowNumber }, 
                         editAs: 'oneCell' 
                     });
                 } else {
-                    let cell = worksheet.getCell(imgRowNumber, colIndex + 1);
+                    let cell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
                     cell.value = "(No Image)";
                     cell.alignment = { vertical: 'middle', horizontal: 'center' };
                 }
 
-                let textCell = worksheet.getCell(textRowNumber, colIndex + 1);
+                let textCell = worksheet.getCell(textRowNumber, excelColIndex + 1);
                 textCell.value = val;
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                 textCell.font = { size: 12, bold: true };
 
-                let imgCell = worksheet.getCell(imgRowNumber, colIndex + 1);
+                let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
                 imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
                 textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
 
@@ -678,12 +704,12 @@
         statusDiv.innerText = t.statusExcelDone;
     }
 
+    // --- 相機與OCR相關 ---
     function startQRScan() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         const wrapper = document.getElementById('camera-wrapper');
         wrapper.style.display = "block";
         document.getElementById('ocr-status').innerText = t.statusCam;
-        
         html5QrCode = new Html5Qrcode("reader");
         resetScanTimer();
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
@@ -741,7 +767,7 @@
     function openSettings() {
         document.getElementById('set-title').value = appConfig.title;
         document.getElementById('set-count').value = appConfig.gridCount;
-        updateLangManageList(); // 更新設定內的語言列表
+        updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
     function closeSettings() { document.getElementById('settingsModal').style.display = "none"; }
@@ -751,18 +777,16 @@
         appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 12;
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
-        applyLanguage(appConfig.currentLang); // 確保標題更新
+        applyLanguage(appConfig.currentLang); 
         closeSettings();
     }
     function saveSettingsDirectly() {
-        // 只存不關閉 (用於語言切換)
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
     }
     function loadConfig() {
         let saved = localStorage.getItem('qrAppConfig');
         if (saved) {
             let parsed = JSON.parse(saved);
-            // 確保新舊版本相容 (補上缺少的欄位)
             if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
             appConfig = parsed;
