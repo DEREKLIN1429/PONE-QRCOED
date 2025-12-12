@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (ID Card 專用版)</title>
+    <title>QR Code 智慧系統 (客製化版面)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -117,7 +117,7 @@
             <div class="btn-group">
                 <button class="btn-scan" onclick="startCameraMode('qr')"><span class="icon">📸</span><span data-i18n="btnScan">掃描</span></button>
                 <button class="btn-img-export" onclick="openImgExportModal()"><span class="icon">🖼️</span><span data-i18n="btnImgExport">轉出圖片</span></button>
-                <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出 ID CARD EXCEL</span></button>
+                <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出客製化 EXCEL</span></button>
                 <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span></button>
             </div>
         </header>
@@ -125,16 +125,16 @@
     </div>
 
     <div class="right-column">
-        <div class="print-settings-title" data-i18n="printSettings">🖨️ ID Card 輸出說明</div>
+        <div class="print-settings-title" data-i18n="printSettings">🖨️ 客製化輸出說明</div>
         <div class="info-box">
-            此模式為 <b>ID Card 專用版</b>。<br><br>
-            Excel 將自動套用以下固定格式：<br>
-            • 欄寬與列高已固定<br>
-            • 圖片位置：<b>C2, G2, K2</b>...<br>
-            • 圖片將<b>填滿整個儲存格 (背景模式)</b><br>
-            • 文字置中對齊<br>
+            此模式為 <b>特殊順序版</b>。<br><br>
+            Excel 輸出邏輯如下：<br>
+            • 間隔欄 A, C, E, G, I 寬度為 1<br>
+            • 圖片自動填入順序：<br>
+              <b>B2→D2→F2→H5→B5→D5...</b><br>
+            • 圖片將<b>填滿儲存格 (背景)</b><br>
             <br>
-            若要下載高畫質圖片，請點選<b>「轉出圖片」</b>。
+            請點擊 <b>「轉出客製化 EXCEL」</b>。
         </div>
     </div>
 </div>
@@ -183,21 +183,21 @@
         "zh-TW": {
             appTitle: "QR Code 智慧系統",
             camHint: "掃描中... 成功後自動填入",
-            btnScan: "連續掃描", btnImgExport: "轉出圖片", btnClear: "清除全部", btnExcel: "轉出 ID CARD EXCEL",
+            btnScan: "連續掃描", btnImgExport: "轉出圖片", btnClear: "清除全部", btnExcel: "轉出客製化 EXCEL",
             btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料 (Enter 可確定)...",
-            printSettings: "🖨️ ID Card 輸出說明",
+            printSettings: "🖨️ 客製化輸出說明",
             settingsTitle: "系統設定", lblAppTitle: "主標題名稱：", lblGridCount: "總格數設定：", lblLangManage: "語言管理 (Language Manage)：",
             btnSave: "儲存", btnCancel: "取消", gridLabel: "格位 ", gridPlace: "待輸入...",
             alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
             statusCam: "相機啟動中...", statusDone: "✅ 完成",
-            statusExcel: "⏳ 正在產生 ID Card Excel...", statusExcelDone: "✅ 下載完成！"
+            statusExcel: "⏳ 正在產生客製化 Excel...", statusExcelDone: "✅ 下載完成！"
         },
         "en-US": {
             appTitle: "Smart QR Code System",
             camHint: "Scanning... Auto-fills on success",
-            btnScan: "Cont. Scan", btnImgExport: "Export Images", btnClear: "Clear All", btnExcel: "Export ID Card Excel",
+            btnScan: "Cont. Scan", btnImgExport: "Export Images", btnClear: "Clear All", btnExcel: "Export Custom Excel",
             btnAdd: "⬇️ Add", batchPlace: "Quick input (Press Enter)...",
-            printSettings: "🖨️ ID Card Export Info",
+            printSettings: "🖨️ Custom Export Info",
             settingsTitle: "System Settings", lblAppTitle: "App Title:", lblGridCount: "Grid Count:", lblLangManage: "Language Manage:",
             btnSave: "Save", btnCancel: "Cancel", gridLabel: "Slot ", gridPlace: "Waiting...",
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
@@ -302,7 +302,7 @@
         }
     }
 
-    // --- Excel 匯出 (背景填滿模式) ---
+    // --- Excel 匯出 (客製化順序版) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -322,48 +322,67 @@
             margins: { top: 0, bottom: 0, left: 0, right: 0, header: 0, footer: 0 }
         };
         
-        // 設定欄寬
+        // 1. 設定欄寬 (A,C,E,G,I 為 1; 其他為內容欄)
+        // 預設內容欄寬為 11.5 (沿用設定)，A,C,E,G,I 設為 1
         worksheet.columns = [
-            { width: 0.7 },   // A
-            { width: 1.6 },   // B
-            { width: 11.50 }, // C
-            { width: 1.6 },   // D
-            { width: 0.38 },  // E
-            { width: 1.6 },   // F
-            { width: 11.50 }, // G
-            { width: 1.6 },   // H
-            { width: 0.38 },  // I
-            { width: 1.6 },   // J
-            { width: 11.50 }, // K
-            { width: 1.6 }    // L
+            { width: 1 },     // A (Spacer)
+            { width: 11.50 }, // B (Content)
+            { width: 1 },     // C (Spacer)
+            { width: 11.50 }, // D (Content)
+            { width: 1 },     // E (Spacer)
+            { width: 11.50 }, // F (Content)
+            { width: 1 },     // G (Spacer) - 根據規律補上
+            { width: 11.50 }, // H (Content)
+            { width: 1 },     // I (Spacer)
         ];
 
-        const targetCols = [3, 7, 11]; // C, G, K
-        const itemsPerRow = 3; 
-        
-        // 移除了 offX/offY 計算，因為我們要填滿儲存格
+        // 2. 定義 1~12 格的具體位置 (Row 為 Excel 行號, Col 為 Excel 欄索引)
+        // 順序: B2, D2, F2, H5, B5, D5, F8, H8, B8, D11, F11, H11
+        // 注意: 圖片在 Row, 文字在 Row+1
+        const layoutMap = [
+            { col: 2, row: 2 },  // 1: B2
+            { col: 4, row: 2 },  // 2: D2
+            { col: 6, row: 2 },  // 3: F2
+            { col: 8, row: 5 },  // 4: H5 (跳至第5列 H欄)
+            { col: 2, row: 5 },  // 5: B5
+            { col: 4, row: 5 },  // 6: D5
+            { col: 6, row: 8 },  // 7: F8 (跳至第8列 F欄)
+            { col: 8, row: 8 },  // 8: H8
+            { col: 2, row: 8 },  // 9: B8
+            { col: 4, row: 11 }, // 10: D11 (跳至第11列 D欄)
+            { col: 6, row: 11 }, // 11: F11
+            { col: 8, row: 11 }  // 12: H11
+        ];
 
-        for (let i = 1; i <= appConfig.gridCount; i++) {
-            let rowGroup = Math.floor((i - 1) / itemsPerRow); 
-            let colGroup = (i - 1) % itemsPerRow;
+        // 3. 設定列高 (遍歷所有可能用到的列)
+        // 主要列組: (2,3,4), (5,6,7), (8,9,10), (11,12,13)
+        // 格式: Image(57.6), Text(15), Spacer(7/5)
+        worksheet.getRow(1).height = 5; // Top Margin
+
+        const rowGroups = [2, 5, 8, 11];
+        rowGroups.forEach(startRow => {
+            worksheet.getRow(startRow).height = 57.6;     // 圖片列
+            worksheet.getRow(startRow + 1).height = 15;   // 文字列
             
-            let imgRowNumber = 2 + (rowGroup * 3);    
-            let textRowNumber = imgRowNumber + 1;     
-            let spacerRowNumber = imgRowNumber + 2;   
+            // 間隔列處理
+            let spacerRow = startRow + 2;
+            if (spacerRow === 13) worksheet.getRow(spacerRow).height = 5; // 底部邊界
+            else worksheet.getRow(spacerRow).height = 7; // 一般間隔
+        });
 
-            // 設定列高
-            if (i <= 12) { 
-                worksheet.getRow(1).height = 5; 
-                worksheet.getRow(imgRowNumber).height = 57.6; 
-                worksheet.getRow(textRowNumber).height = 15;  
-                if (spacerRowNumber === 13) worksheet.getRow(spacerRowNumber).height = 5; 
-                else worksheet.getRow(spacerRowNumber).height = 7; 
-            }
+        // 4. 填入資料
+        for (let i = 1; i <= appConfig.gridCount; i++) {
+            // 取得該格位的對應座標 (如果超過12格則忽略)
+            if (i > layoutMap.length) break;
+            const pos = layoutMap[i-1];
+            
+            let imgRowNumber = pos.row;
+            let textRowNumber = pos.row + 1;
+            let excelColIndex = pos.col;
 
             let inputEl = document.getElementById('data-' + i);
             if (!inputEl) continue;
             let val = inputEl.value.trim();
-            let excelColIndex = targetCols[colGroup];
 
             if (val !== "") {
                 let containerDiv = document.getElementById('code-img-' + i);
@@ -377,9 +396,9 @@
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     worksheet.addImage(imageId, {
-                        tl: { col: excelColIndex - 1, row: imgRowNumber - 1 }, // 左上 (該格開始)
-                        br: { col: excelColIndex, row: imgRowNumber },         // 右下 (該格結束)
-                        editAs: 'oneCell' // 隨儲存格變動
+                        tl: { col: excelColIndex - 1, row: imgRowNumber - 1 }, // 左上
+                        br: { col: excelColIndex, row: imgRowNumber },         // 右下
+                        editAs: 'oneCell'
                     });
                 }
                 
@@ -395,7 +414,7 @@
         }
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "ID_Card_QR.xlsx");
+        saveAs(blob, "Custom_Layout_QR.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
