@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (精準置中修復版)</title>
+    <title>QR Code 智慧系統 (連續掃描+相機OCR)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -37,11 +37,23 @@
         .settings-icon { font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; transition: background 0.3s; }
         .settings-icon:hover { background: #e0e0e0; }
         
+        /* 相機區域 */
         #camera-wrapper { width: 100%; max-width: 500px; margin: 0 auto 15px auto; display: none; position: relative; overflow: hidden; border-radius: 8px;}
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; cursor: pointer; background: #000; }
-        #scan-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 4px solid #00ff00; box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 10; border-radius: 20px; pointer-events: none; }
-        #scan-overlay::after { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px; background: #00ff00; box-shadow: 0 0 4px #00ff00; animation: scanning 2s infinite ease-in-out; }
+        
+        /* 掃描對準框 (僅在 QR 模式顯示) */
+        #scan-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 250px; height: 250px; border: 4px solid #00ff00;
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 10; border-radius: 20px; pointer-events: none;
+            display: none; /* 預設隱藏，QR模式開啟 */
+        }
+        #scan-overlay::after {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px;
+            background: #00ff00; box-shadow: 0 0 4px #00ff00; animation: scanning 2s infinite ease-in-out;
+        }
         @keyframes scanning { 0% { top: 10px; opacity: 0; } 50% { opacity: 1; } 100% { top: 230px; opacity: 0; } }
+
         .camera-hint { position: absolute; bottom: 10px; left: 0; right: 0; color: white; text-align: center; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 20; pointer-events: none; font-size: 14px; }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
@@ -117,15 +129,14 @@
             <div id="camera-wrapper">
                 <div id="scan-overlay"></div>
                 <div id="reader"></div>
-                <div class="camera-hint" data-i18n="camHint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
+                <div id="cam-hint-text" class="camera-hint" data-i18n="camHint"></div>
             </div>
             <div id="ocr-status"></div>
             <div class="btn-group">
-                <button class="btn-scan" onclick="startQRScan()"><span class="icon">📸</span><span data-i18n="btnScan">掃描</span></button>
-                <button class="btn-ocr" onclick="triggerOCRFile()"><span class="icon">📄</span><span data-i18n="btnOcr">圖片 OCR</span></button>
+                <button class="btn-scan" onclick="startCameraMode('qr')"><span class="icon">📸</span><span data-i18n="btnScan">掃描</span></button>
+                <button class="btn-ocr" onclick="startCameraMode('ocr')"><span class="icon">📷</span><span data-i18n="btnOcr">文字照相辨識</span></button>
                 <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出 EXCEL</span></button>
                 <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span></button>
-                <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
             </div>
         </header>
         <div class="grid-container" id="main-grid"></div>
@@ -218,8 +229,10 @@
 <script>
     const translations = {
         "zh-TW": {
-            appTitle: "QR Code 智慧系統", camHint: "👆 點擊畫面：拍照並 OCR 文字辨識",
-            btnScan: "掃描", btnOcr: "圖片 OCR", btnClear: "清除全部", btnExcel: "依設定轉出 EXCEL",
+            appTitle: "QR Code 智慧系統",
+            camHint: "掃描中... 成功後自動填入",
+            ocrHint: "點擊畫面進行拍照辨識",
+            btnScan: "連續掃描", btnOcr: "文字照相辨識", btnClear: "清除全部", btnExcel: "依設定轉出 EXCEL",
             btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料 (Enter 可確定)...",
             printSettings: "🖨️ Excel 列印設定", paperSize: "紙張大小 (Paper Size)",
             optCustom: "手動設定 (Custom)", orientation: "方向 (Orientation)",
@@ -233,8 +246,10 @@
             statusExcel: "⏳ 正在產生 Excel...", statusExcelDone: "✅ Excel 下載完成！"
         },
         "en-US": {
-            appTitle: "Smart QR Code System", camHint: "👆 Click: Capture & OCR",
-            btnScan: "Scan", btnOcr: "Image OCR", btnClear: "Clear All", btnExcel: "Export Excel",
+            appTitle: "Smart QR Code System",
+            camHint: "Scanning... Auto-fills on success",
+            ocrHint: "Tap screen to capture & OCR",
+            btnScan: "Cont. Scan", btnOcr: "Camera OCR", btnClear: "Clear All", btnExcel: "Export Excel",
             btnAdd: "⬇️ Add", batchPlace: "Quick input (Press Enter)...",
             printSettings: "🖨️ Excel Print Settings", paperSize: "Paper Size",
             optCustom: "Custom Size", orientation: "Orientation",
@@ -244,12 +259,14 @@
             settingsTitle: "System Settings", lblAppTitle: "App Title:", lblGridCount: "Grid Count:", lblLangManage: "Language Manage:",
             btnSave: "Save", btnCancel: "Cancel", gridLabel: "Slot ", gridPlace: "Waiting...",
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
-            statusCam: "Camera active... (10s auto-off)", statusOCR: "⏳ Processing...", statusDone: "✅ Done",
+            statusCam: "Camera active...", statusOCR: "⏳ Processing...", statusDone: "✅ Done",
             statusExcel: "⏳ Generating Excel...", statusExcelDone: "✅ Download Complete!"
         },
         "hi-IN": {
-            appTitle: "QR कोड स्मार्ट सिस्टम", camHint: "👆 क्लिक करें: फोटो और OCR",
-            btnScan: "स्कैन करें", btnOcr: "छवि OCR", btnClear: "सभी साफ़ करें", btnExcel: "एक्सेल निर्यात करें",
+            appTitle: "QR कोड स्मार्ट सिस्टम", 
+            camHint: "स्कैनिंग... सफल होने पर ऑटो-भरें",
+            ocrHint: "फोटो और OCR के लिए स्क्रीन टैप करें",
+            btnScan: "निरंतर स्कैन", btnOcr: "कैमरा OCR", btnClear: "सभी साफ़ करें", btnExcel: "एक्सेल निर्यात करें",
             btnAdd: "⬇️ जोड़ें", batchPlace: "डेटा दर्ज करें (Enter दबाएं)...",
             printSettings: "🖨️ प्रिंट सेटिंग्स", paperSize: "कागज का आकार",
             optCustom: "कस्टम आकार", orientation: "दिशा",
@@ -268,7 +285,7 @@
         title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
         defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, 
-        excelSpacer: { colWidth: 1, rowHeight: 5 }, 
+        excelSpacer: { colWidth: 1, rowHeight: 10 }, 
         excelFontSize: 5,
         excelQrSize: { col: 20, row: 100 }, 
         lastPrintState: null
@@ -276,12 +293,149 @@
 
     let html5QrCode;
     let scanTimeout; 
+    let currentMode = null; // 'qr' or 'ocr'
+    let lastScannedText = "";
+    let lastScanTime = 0;
 
     window.onload = function() { 
         loadConfig(); initLangSelect(); applyLanguage(appConfig.currentLang);
         initGrid(); initPrintSettings(); 
         document.getElementById('batch-input').addEventListener('keydown', function(event) { if (event.key === 'Enter') processBatchInput(); });
     };
+
+    // --- 相機控制中心 ---
+    function startCameraMode(mode) {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+        const wrapper = document.getElementById('camera-wrapper');
+        const overlay = document.getElementById('scan-overlay');
+        const hint = document.getElementById('cam-hint-text');
+        const status = document.getElementById('ocr-status');
+        
+        // 切換模式顯示
+        wrapper.style.display = "block";
+        currentMode = mode;
+        
+        if (mode === 'qr') {
+            overlay.style.display = "block";
+            hint.innerText = t.camHint;
+            status.innerText = t.statusCam;
+        } else {
+            overlay.style.display = "none";
+            hint.innerText = t.ocrHint;
+            status.innerText = "Camera Active - Tap to Capture";
+        }
+
+        // 啟動相機
+        if (html5QrCode) { 
+            // 如果已經開啟，先停止再重開 (或是切換邏輯)
+            stopScan().then(() => initHtml5QrCode(mode));
+        } else {
+            initHtml5QrCode(mode);
+        }
+    }
+
+    function initHtml5QrCode(mode) {
+        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        html5QrCode.start({ facingMode: "environment" }, config, 
+            (decodedText) => {
+                if (mode === 'qr') {
+                    // 防重複掃描 (1秒內相同內容不處理)
+                    const now = Date.now();
+                    if (decodedText === lastScannedText && (now - lastScanTime) < 1500) {
+                        return;
+                    }
+                    lastScannedText = decodedText;
+                    lastScanTime = now;
+                    
+                    // 播放提示音 (可選)
+                    // ... 
+                    
+                    fillData(decodedText, false); // false = 不要彈出 confirm，直接填入
+                    document.getElementById('ocr-status').innerText = "✅ Scanned: " + decodedText;
+                    
+                    // 重要：不呼叫 stopScan()，讓它繼續掃
+                }
+            },
+            (errorMessage) => { 
+                // ignore errors 
+            }
+        ).then(() => {
+            // 如果是 OCR 模式，綁定點擊事件
+            if (mode === 'ocr') {
+                let videoElement = document.querySelector("#reader video");
+                if(videoElement) {
+                    videoElement.onclick = function() { captureAndOCR(videoElement); };
+                }
+            }
+        }).catch(err => {
+            alert("Camera Error: " + err);
+            document.getElementById('camera-wrapper').style.display = "none";
+        });
+    }
+
+    function stopScan() {
+        if(html5QrCode) {
+            return html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                document.getElementById('camera-wrapper').style.display = "none";
+                html5QrCode = null;
+            }).catch(err => console.log(err));
+        }
+        return Promise.resolve();
+    }
+
+    // --- OCR Capture ---
+    function captureAndOCR(video) {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+        let canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        
+        // 暫停畫面效果 (實際上是停止相機)
+        stopScan(); 
+        
+        document.getElementById('ocr-status').innerText = t.statusOCR;
+        
+        Tesseract.recognize(canvas.toDataURL('image/png'), 'eng+chi_tra').then(({ data: { text } }) => {
+            document.getElementById('ocr-status').innerText = t.statusDone;
+            // 清理文字 (換行轉空格)
+            let cleanText = text.replace(/\n/g, " ").trim();
+            if(cleanText) fillData(cleanText, true); // true = confirm for OCR
+            else alert("No text found!");
+        });
+    }
+
+    // --- Data Filling Logic (Updated) ---
+    function fillData(text, needConfirm = true) {
+        if (needConfirm && !confirm("Data: \n" + text + "\n\nConfirm?")) return;
+        
+        // 分割資料
+        let parts = text.split(/[,;\n]+/).filter(item => item.trim().length > 0);
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+        
+        let placedCount = 0;
+        for (let part of parts) {
+            let placed = false;
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                let input = document.getElementById('data-' + i);
+                if (input.value.trim() === "") {
+                    input.value = part; 
+                    generateSingleCode(i); 
+                    placed = true; 
+                    placedCount++;
+                    break;
+                }
+            }
+            if (!placed) { 
+                alert(t.alertFull); 
+                return; 
+            }
+        }
+        
+        // 如果是連續掃描，可以在這裡加一個短暫的視覺回饋 (比如閃爍)
+    }
 
     function initPrintSettings() {
         const p = appConfig.lastPrintState || {
@@ -391,10 +545,10 @@
         // 間隔設定
         let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
         
-        // QR Code 存放欄寬 (User Configured)
+        // QR Code 存放欄寬 (Data Col) 
         let mainColWidth = parseFloat(appConfig.excelQrSize.col) || 20;
 
-        // 欄位配置
+        // 欄位配置：資料, 間隔, 資料, 間隔...
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
             colsConfig.push({ width: mainColWidth }); 
@@ -440,12 +594,11 @@
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     
-                    // --- 圖片置中計算 (使用EMU) ---
-                    // 1 Excel Col Unit ~= 8 px (係數調整為 8 以適配置中)
+                    // --- 置中計算 (Pixel based) ---
+                    // 1 Excel Col Unit ~= 7.5 px
                     // 1 Excel Row Unit ~= 1.33 px
                     // 1 px = 9525 EMUs
-                    
-                    let cellPxW = mainColWidth * 8.0; 
+                    let cellPxW = mainColWidth * 7.5; 
                     let cellPxH = IMG_H * 1.33;
                     
                     let offX = Math.max(0, (cellPxW - QR_PIXELS) / 2) * 9525;
@@ -479,7 +632,7 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_Final.xlsx");
+        saveAs(blob, "QRCode_Centered.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
@@ -585,62 +738,6 @@
         }
         inputField.value = "";
     }
-    function fillData(text) {
-        if (!confirm("Confirm data: \n" + text)) return;
-        let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
-        const t = translations[appConfig.currentLang] || translations["en-US"];
-        for (let part of parts) {
-            let placed = false;
-            for (let i = 1; i <= appConfig.gridCount; i++) {
-                let input = document.getElementById('data-' + i);
-                if (input.value.trim() === "") {
-                    input.value = part; generateSingleCode(i); placed = true; break;
-                }
-            }
-            if (!placed) { alert(t.alertFull); return; }
-        }
-    }
-    function startQRScan() {
-        const t = translations[appConfig.currentLang] || translations["en-US"];
-        const wrapper = document.getElementById('camera-wrapper');
-        wrapper.style.display = "block";
-        document.getElementById('ocr-status').innerText = t.statusCam;
-        html5QrCode = new Html5Qrcode("reader");
-        resetScanTimer();
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-            (decodedText) => { fillData(decodedText); resetScanTimer(); }, () => {}
-        ).then(() => {
-            setTimeout(() => {
-                let videoElement = document.querySelector("#reader video");
-                if(videoElement) videoElement.onclick = function() { captureAndOCR(videoElement); };
-            }, 1000);
-        }).catch(err => { alert("Cam Error:" + err); wrapper.style.display = "none"; });
-    }
-    function stopScan() { if(html5QrCode) { html5QrCode.stop().then(() => { document.getElementById('camera-wrapper').style.display = "none"; clearTimeout(scanTimeout); }).catch(err => console.log(err)); } }
-    function resetScanTimer() { if(scanTimeout) clearTimeout(scanTimeout); scanTimeout = setTimeout(() => { stopScan(); document.getElementById('ocr-status').innerText = ""; }, 10000); }
-    function captureAndOCR(video) {
-        const t = translations[appConfig.currentLang] || translations["en-US"];
-        let canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0);
-        document.getElementById('ocr-status').innerText = t.statusOCR;
-        stopScan(); 
-        Tesseract.recognize(canvas.toDataURL('image/png'), 'eng+chi_tra').then(({ data: { text } }) => {
-            document.getElementById('ocr-status').innerText = t.statusDone;
-            fillData(text.replace(/,/g, " "));
-        });
-    }
-    function triggerOCRFile() { document.getElementById('ocr-file-input').click(); }
-    function processOCRFile(input) {
-        const t = translations[appConfig.currentLang] || translations["en-US"];
-        if (input.files && input.files[0]) {
-            document.getElementById('ocr-status').innerText = t.statusOCR;
-            Tesseract.recognize(input.files[0], 'eng+chi_tra').then(({ data: { text } }) => {
-                document.getElementById('ocr-status').innerText = t.statusDone;
-                fillData(text.replace(/,/g, " "));
-            });
-        }
-    }
     function clearAll() {
         if(!confirm("Clear All?")) return;
         for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -700,6 +797,17 @@
             if(!parsed.excelFontSize) parsed.excelFontSize = 5;
             if(!parsed.excelQrSize) parsed.excelQrSize = { col: 20, row: 100 };
             appConfig = parsed;
+        }
+    }
+    function triggerOCRFile() { document.getElementById('ocr-file-input').click(); }
+    function processOCRFile(input) {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+        if (input.files && input.files[0]) {
+            document.getElementById('ocr-status').innerText = t.statusOCR;
+            Tesseract.recognize(input.files[0], 'eng+chi_tra').then(({ data: { text } }) => {
+                document.getElementById('ocr-status').innerText = t.statusDone;
+                fillData(text.replace(/,/g, " "));
+            });
         }
     }
 </script>
