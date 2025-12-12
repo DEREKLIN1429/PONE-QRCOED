@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (完美置中版)</title>
+    <title>QR Code 智慧系統 (置中修正版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -20,81 +20,35 @@
         body { font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; background-color: var(--bg-color); padding: 10px; margin: 0; padding-bottom: 40px; }
         
         /* 佈局架構 */
-        .main-layout {
-            display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start;
-        }
+        .main-layout { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
         .left-column { flex: 1; min-width: 300px; width: 100%; }
-        
-        /* 右側面板 (電腦版) */
-        .right-column {
-            width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content;
-        }
-
-        /* 手機版 RWD */
+        .right-column { width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content; }
         @media (max-width: 900px) {
             .main-layout { flex-direction: column; }
-            .right-column { 
-                width: 100%; box-sizing: border-box; position: static; order: 2; 
-            }
+            .right-column { width: 100%; box-sizing: border-box; position: static; order: 2; }
             .left-column { order: 1; }
         }
 
         /* Header */
-        header { 
-            display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; 
-            background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        .header-top-row {
-            width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px;
-        }
-
+        header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .header-top-row { width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; }
         h2 { color: #333; margin: 0 0 20px 0; font-size: 1.5rem; text-align: center; width: 100%; line-height: 1.4; }
-        
-        .lang-select {
-            padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff;
-        }
-        .settings-icon { 
-            font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; 
-            width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;
-            transition: background 0.3s;
-        }
+        .lang-select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff; }
+        .settings-icon { font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; transition: background 0.3s; }
         .settings-icon:hover { background: #e0e0e0; }
         
         #camera-wrapper { width: 100%; max-width: 500px; margin: 0 auto 15px auto; display: none; position: relative; overflow: hidden; border-radius: 8px;}
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; cursor: pointer; background: #000; }
-        
-        /* 掃描對準框 */
-        #scan-overlay {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 250px; height: 250px; border: 4px solid #00ff00;
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 10; border-radius: 20px; pointer-events: none;
-        }
-        #scan-overlay::after {
-            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px;
-            background: #00ff00; box-shadow: 0 0 4px #00ff00; animation: scanning 2s infinite ease-in-out;
-        }
+        #scan-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 4px solid #00ff00; box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 10; border-radius: 20px; pointer-events: none; }
+        #scan-overlay::after { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px; background: #00ff00; box-shadow: 0 0 4px #00ff00; animation: scanning 2s infinite ease-in-out; }
         @keyframes scanning { 0% { top: 10px; opacity: 0; } 50% { opacity: 1; } 100% { top: 230px; opacity: 0; } }
-
         .camera-hint { position: absolute; bottom: 10px; left: 0; right: 0; color: white; text-align: center; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 20; pointer-events: none; font-size: 14px; }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
-        /* 按鈕群組 */
-        .btn-group { 
-            display: grid; gap: 10px; width: 100%; margin: 0 0 10px 0; 
-            grid-template-columns: 1fr 1fr; 
-        }
-        @media (min-width: 768px) { 
-            .btn-group { grid-template-columns: repeat(4, 1fr); } 
-        }
+        .btn-group { display: grid; gap: 10px; width: 100%; margin: 0 0 10px 0; grid-template-columns: 1fr 1fr; }
+        @media (min-width: 768px) { .btn-group { grid-template-columns: repeat(4, 1fr); } }
         
-        button {
-            width: 100%; padding: 12px 5px; border: none; border-radius: 8px; cursor: pointer;
-            font-size: 16px; color: white; font-weight: bold; box-shadow: 0 3px 5px rgba(0,0,0,0.15);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            line-height: 1.2; overflow: hidden; white-space: normal;
-        }
+        button { width: 100%; padding: 12px 5px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; color: white; font-weight: bold; box-shadow: 0 3px 5px rgba(0,0,0,0.15); display: flex; flex-direction: column; justify-content: center; align-items: center; line-height: 1.2; overflow: hidden; white-space: normal; }
         button span.icon { font-size: 20px; margin-bottom: 2px; display: block; }
         .btn-scan { background-color: #007bff; }
         .btn-ocr { background-color: #ffc107; color: #333; }
@@ -102,21 +56,10 @@
         .btn-clear { background-color: #dc3545; }
         button:active { transform: scale(0.98); }
 
-        /* 快速輸入列 */
-        .batch-input-container { 
-            width: 100%; display: flex; gap: 8px; margin-bottom: 15px; 
-        }
-        .batch-input { 
-            flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; 
-        }
-        .btn-batch-add { 
-            width: auto; min-width: 80px; flex: 0 0 auto; 
-            background-color: #28a745; color: white; border: none; border-radius: 8px; 
-            padding: 0 15px; font-size: 16px; font-weight: bold; cursor: pointer; 
-            white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15); 
-        }
+        .batch-input-container { width: 100%; display: flex; gap: 8px; margin-bottom: 15px; }
+        .batch-input { flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; }
+        .btn-batch-add { width: auto; min-width: 80px; flex: 0 0 auto; background-color: #28a745; color: white; border: none; border-radius: 8px; padding: 0 15px; font-size: 16px; font-weight: bold; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15); }
 
-        /* 格位區 */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding-bottom: 50px; }
         .grid-item { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #e1e1e1; display: flex; flex-direction: column; align-items: center; }
         .grid-label { font-size: 12px; color: #888; margin-bottom: 5px; align-self: flex-start; }
@@ -126,7 +69,6 @@
         .code-display-area img, .code-display-area canvas { max-width: 95% !important; max-height: 95% !important; display: block; }
         .qr-text-info { font-size: 13px; color: #333; word-break: break-all; background: #eef; padding: 4px; border-radius: 4px; width: 100%; min-height: 18px; }
 
-        /* 設定面板 */
         .print-settings-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
         .setting-group { margin-bottom: 15px; text-align: left; }
         .setting-group label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; font-weight: bold;}
@@ -141,7 +83,6 @@
         .margin-input-wrapper span { width: 25px; font-size: 12px; color: #888; }
         .margin-input-wrapper input { flex: 1; }
 
-        /* Modal */
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; max-height: 90vh; overflow-y: auto; }
         .modal-footer { text-align: right; margin-top: 20px; }
@@ -152,70 +93,46 @@
         .lang-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #f0f0f0; align-items: center; }
         .lang-item:last-child { border-bottom: none; }
         .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; width: auto; height: auto; }
-        
         .lang-add-group { display: flex; gap: 5px; margin-top: 10px; align-items: center; }
         .lang-add-group input { flex: 1; padding: 6px; font-size: 13px; }
         .btn-sm-add { width: auto; flex: 0 0 auto; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 6px 12px; font-size: 13px; }
 
-        /* 作者署名 */
-        .author-info {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background-color: #333; color: #fff;
-            text-align: center; padding: 8px;
-            font-size: 14px; letter-spacing: 1px;
-            z-index: 900;
-        }
-
+        .author-info { position: fixed; bottom: 0; left: 0; right: 0; background-color: #333; color: #fff; text-align: center; padding: 8px; font-size: 14px; letter-spacing: 1px; z-index: 900; }
     </style>
 </head>
 <body>
 
 <div class="main-layout">
-    
     <div class="left-column">
         <header>
             <div class="header-top-row">
                 <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)"></select>
                 <div class="settings-icon" onclick="openSettings()" title="Settings">⚙️</div>
             </div>
-
             <h2 id="app-title" data-i18n="appTitle">QR Code 智慧系統</h2>
-            
             <div class="batch-input-container">
                 <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料 (Enter 可確定)..." data-i18n-ph="batchPlace">
                 <button class="btn-batch-add" onclick="processBatchInput()" data-i18n="btnAdd">⬇️ 加入</button>
             </div>
-
             <div id="camera-wrapper">
                 <div id="scan-overlay"></div>
                 <div id="reader"></div>
                 <div class="camera-hint" data-i18n="camHint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
             </div>
             <div id="ocr-status"></div>
-
             <div class="btn-group">
-                <button class="btn-scan" onclick="startQRScan()">
-                    <span class="icon">📸</span><span data-i18n="btnScan">掃描</span>
-                </button>
-                <button class="btn-ocr" onclick="triggerOCRFile()">
-                    <span class="icon">📄</span><span data-i18n="btnOcr">圖片 OCR</span>
-                </button>
-                <button class="btn-excel" onclick="exportExcelWithImages()">
-                    <span class="icon">📊</span><span data-i18n="btnExcel">轉出 EXCEL</span>
-                </button>
-                <button class="btn-clear" onclick="clearAll()">
-                    <span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span>
-                </button>
+                <button class="btn-scan" onclick="startQRScan()"><span class="icon">📸</span><span data-i18n="btnScan">掃描</span></button>
+                <button class="btn-ocr" onclick="triggerOCRFile()"><span class="icon">📄</span><span data-i18n="btnOcr">圖片 OCR</span></button>
+                <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出 EXCEL</span></button>
+                <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span></button>
                 <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
             </div>
         </header>
-
         <div class="grid-container" id="main-grid"></div>
     </div>
 
     <div class="right-column">
         <div class="print-settings-title" data-i18n="printSettings">🖨️ Excel 列印設定</div>
-        
         <div class="setting-group">
             <label data-i18n="paperSize">紙張大小 (Paper Size)</label>
             <select id="print-size" onchange="onPrintSettingChange()">
@@ -225,18 +142,12 @@
                 <option value="1">Letter (8.5 x 11 in)</option>
                 <option value="11">A5 (148 x 210 mm)</option>
             </select>
-            
             <div id="custom-size-inputs" class="custom-size-group">
                 <input type="number" id="custom-width" placeholder="W" onchange="onPrintSettingChange()">
                 <input type="number" id="custom-height" placeholder="H" onchange="onPrintSettingChange()">
-                <select id="custom-unit" onchange="onPrintSettingChange()">
-                    <option value="cm">cm</option>
-                    <option value="in">inch</option>
-                    <option value="mm">mm</option>
-                </select>
+                <select id="custom-unit" onchange="onPrintSettingChange()"><option value="cm">cm</option><option value="in">inch</option><option value="mm">mm</option></select>
             </div>
         </div>
-
         <div class="setting-group">
             <label data-i18n="orientation">方向 (Orientation)</label>
             <select id="print-orientation" onchange="onPrintSettingChange()">
@@ -244,120 +155,57 @@
                 <option value="landscape" data-i18n="optLandscape">橫向 (Landscape)</option>
             </select>
         </div>
-
         <div class="setting-group">
             <label data-i18n="columns">每行欄數 (Columns)</label>
             <select id="print-cols" onchange="onPrintSettingChange()">
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="2">2</option>
-                <option value="1">1</option>
+                <option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="2">2</option><option value="1">1</option>
             </select>
         </div>
-
         <div class="setting-group">
             <label data-i18n="margins">頁面邊距 (Margins)</label>
             <div class="margin-grid">
-                <div class="margin-input-wrapper">
-                    <span data-i18n="mTop">上</span>
-                    <input type="number" id="margin-top" step="0.1" onchange="onPrintSettingChange()">
-                </div>
-                <div class="margin-input-wrapper">
-                    <span data-i18n="mBottom">下</span>
-                    <input type="number" id="margin-bottom" step="0.1" onchange="onPrintSettingChange()">
-                </div>
-                <div class="margin-input-wrapper">
-                    <span data-i18n="mLeft">左</span>
-                    <input type="number" id="margin-left" value="0.5" step="0.1" onchange="onPrintSettingChange()">
-                </div>
-                <div class="margin-input-wrapper">
-                    <span data-i18n="mRight">右</span>
-                    <input type="number" id="margin-right" step="0.1" onchange="onPrintSettingChange()">
-                </div>
+                <div class="margin-input-wrapper"><span data-i18n="mTop">上</span><input type="number" id="margin-top" step="0.1" onchange="onPrintSettingChange()"></div>
+                <div class="margin-input-wrapper"><span data-i18n="mBottom">下</span><input type="number" id="margin-bottom" step="0.1" onchange="onPrintSettingChange()"></div>
+                <div class="margin-input-wrapper"><span data-i18n="mLeft">左</span><input type="number" id="margin-left" value="0.5" step="0.1" onchange="onPrintSettingChange()"></div>
+                <div class="margin-input-wrapper"><span data-i18n="mRight">右</span><input type="number" id="margin-right" step="0.1" onchange="onPrintSettingChange()"></div>
             </div>
-            <select id="margin-unit" style="margin-top:5px;" onchange="onPrintSettingChange()">
-                <option value="cm">cm</option>
-                <option value="in">inch</option>
-                <option value="mm">mm</option>
-            </select>
+            <select id="margin-unit" style="margin-top:5px;" onchange="onPrintSettingChange()"><option value="cm">cm</option><option value="in">inch</option><option value="mm">mm</option></select>
         </div>
-
         <button class="btn-excel" onclick="exportExcelWithImages()" style="margin-top: 10px;">
             <span class="icon">📊</span><span data-i18n="btnExcel">依設定轉出 EXCEL</span>
         </button>
     </div>
-
 </div>
 
 <div id="settingsModal" class="modal">
     <div class="modal-content">
         <h3 data-i18n="settingsTitle">系統設定</h3>
-        <div class="form-group">
-            <label data-i18n="lblAppTitle">主標題名稱：</label>
-            <input type="text" id="set-title">
-        </div>
-        <div class="form-group">
-            <label data-i18n="lblGridCount">總格數設定：</label>
-            <input type="number" id="set-count" min="1" max="100">
-        </div>
-
+        <div class="form-group"><label data-i18n="lblAppTitle">主標題名稱：</label><input type="text" id="set-title"></div>
+        <div class="form-group"><label data-i18n="lblGridCount">總格數設定：</label><input type="number" id="set-count" min="1" max="100"></div>
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label>預設自訂紙張尺寸 (Default Paper)：</label>
-            <div style="display:flex; gap:5px;">
-                <input type="number" id="def-paper-w" placeholder="W" step="0.01">
-                <input type="number" id="def-paper-h" placeholder="H" step="0.01">
-                <select id="def-paper-unit">
-                    <option value="cm">cm</option>
-                    <option value="in">inch</option>
-                    <option value="mm">mm</option>
-                </select>
-            </div>
+            <div style="display:flex; gap:5px;"><input type="number" id="def-paper-w" placeholder="W" step="0.01"><input type="number" id="def-paper-h" placeholder="H" step="0.01"><select id="def-paper-unit"><option value="cm">cm</option><option value="in">inch</option><option value="mm">mm</option></select></div>
         </div>
-
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label>Excel 間隔 & 字體設定：</label>
             <div style="display:flex; gap:5px; align-items:center;">
-                <div style="flex:1;">
-                    <label style="font-size:12px;">欄間隔 (Width)</label>
-                    <input type="number" id="def-spacer-w" placeholder="1" step="0.1">
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:12px;">列間隔 (Height)</label>
-                    <input type="number" id="def-spacer-h" placeholder="5" step="1">
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:12px;">字體大小 (Font)</label>
-                    <input type="number" id="def-font-size" placeholder="5" step="1">
-                </div>
+                <div style="flex:1;"><label style="font-size:12px;">欄間隔 (Width)</label><input type="number" id="def-spacer-w" placeholder="1" step="0.1"></div>
+                <div style="flex:1;"><label style="font-size:12px;">列間隔 (Height)</label><input type="number" id="def-spacer-h" placeholder="10" step="1"></div>
+                <div style="flex:1;"><label style="font-size:12px;">字體大小 (Font)</label><input type="number" id="def-font-size" placeholder="5" step="1"></div>
             </div>
         </div>
-
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label>QR Code 儲存格尺寸 (QR Cell Size)：</label>
             <div style="display:flex; gap:5px; align-items:center;">
-                <div style="flex:1;">
-                    <label style="font-size:12px;">欄寬 (Col W)</label>
-                    <input type="number" id="def-qr-w" placeholder="20" step="0.1">
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:12px;">列高 (Row H)</label>
-                    <input type="number" id="def-qr-h" placeholder="100" step="1">
-                </div>
+                <div style="flex:1;"><label style="font-size:12px;">欄寬 (Col W)</label><input type="number" id="def-qr-w" placeholder="20" step="0.1"></div>
+                <div style="flex:1;"><label style="font-size:12px;">列高 (Row H)</label><input type="number" id="def-qr-h" placeholder="100" step="1"></div>
             </div>
         </div>
-
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label data-i18n="lblLangManage">語言管理 (Language Manage)：</label>
-            <div class="lang-manage-list" id="lang-list-container">
-                </div>
-            <div class="lang-add-group">
-                <input type="text" id="new-lang-code" placeholder="Code">
-                <input type="text" id="new-lang-name" placeholder="Name">
-                <button class="btn-sm-add" onclick="addNewLanguage()">Add</button>
-            </div>
+            <div class="lang-manage-list" id="lang-list-container"></div>
+            <div class="lang-add-group"><input type="text" id="new-lang-code" placeholder="Code"><input type="text" id="new-lang-name" placeholder="Name"><button class="btn-sm-add" onclick="addNewLanguage()">Add</button></div>
         </div>
-
         <div class="modal-footer">
             <button onclick="saveSettings()" style="background-color:#28a745;color:white;padding:8px;border:none;border-radius:4px;" data-i18n="btnSave">儲存</button>
             <button onclick="closeSettings()" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px;" data-i18n="btnCancel">取消</button>
@@ -422,9 +270,9 @@
         title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
         defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, // 4x6 inch
-        excelSpacer: { colWidth: 1, rowHeight: 5 }, // 預設間隔: 1, 5
-        excelFontSize: 5, // 預設字體: 5
-        excelQrSize: { col: 20, row: 100 }, // 預設 QR 儲存格尺寸
+        excelSpacer: { colWidth: 1, rowHeight: 10 }, 
+        excelFontSize: 5,
+        excelQrSize: { col: 20, row: 100 }, 
         lastPrintState: null
     };
 
@@ -445,7 +293,7 @@
             customUnit: appConfig.defaultPaper.unit,
             orientation: 'portrait',
             cols: 3,
-            margins: { t:0, b:0, l:0.5, r:0, unit:'cm' } // 左邊距預設 0.5
+            margins: { t:0, b:0, l:0.5, r:0, unit:'cm' } 
         };
         document.getElementById('print-size').value = p.size;
         document.getElementById('print-orientation').value = p.orientation;
@@ -563,7 +411,7 @@
         
         // 尺寸設定
         const IMG_H = parseFloat(appConfig.excelQrSize.row) || 100;
-        const TXT_H = 12; // 文字列高設定為 12
+        const TXT_H = 12; // 文字列高
         const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 5; 
         
         // 1.8cm * 1.8cm = ~68 pixels
@@ -595,21 +443,19 @@
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     
                     // --- 圖片置中計算 ---
-                    // 估算儲存格像素大小
-                    // 標準 Excel 欄寬 1單位 ~= 7.2px
-                    // 標準 Excel 列高 1單位 ~= 1.33px
-                    let cellPxW = mainColWidth * 7.2; 
+                    // 1 Excel Col Unit ~= 7.5px (Approx for standard font)
+                    // 1 Excel Row Unit ~= 1.33px
+                    let cellPxW = mainColWidth * 7.5; 
                     let cellPxH = IMG_H * 1.33;
                     
-                    // 計算置中偏移 (EMUs)
-                    // 1px = 9525 EMUs
+                    // EMU Offset
                     let offX = Math.max(0, (cellPxW - QR_PIXELS) / 2) * 9525;
                     let offY = Math.max(0, (cellPxH - QR_PIXELS) / 2) * 9525;
 
                     worksheet.addImage(imageId, {
                         tl: { col: excelColIndex, row: imgRowNumber - 1, nativeColOff: offX, nativeRowOff: offY },
                         ext: { width: QR_PIXELS, height: QR_PIXELS },
-                        editAs: 'oneCell' // 確保使用偏移量
+                        editAs: 'oneCell' 
                     });
                 } else {
                     let cell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
@@ -622,8 +468,7 @@
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                 textCell.font = { size: appConfig.excelFontSize, bold: true };
 
-                // 移除框線 (註解掉或設為 null)
-                // 恢復框線 (如果需要)
+                // 增加框線
                 let borderStyle = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
                 imgCell.border = borderStyle;
@@ -635,11 +480,11 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_Final.xlsx");
+        saveAs(blob, "QRCode_Centered.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- Other Functions (Standard) ---
+    // --- Other Functions (Init, Lang, QR, OCR...) ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -830,12 +675,10 @@
         appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 15.24;
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
 
-        // 儲存間隔設定
         appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 1;
         appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 5;
         appConfig.excelFontSize = parseFloat(document.getElementById('def-font-size').value) || 5;
         
-        // 儲存 QR Cell 尺寸
         appConfig.excelQrSize.col = parseFloat(document.getElementById('def-qr-w').value) || 20;
         appConfig.excelQrSize.row = parseFloat(document.getElementById('def-qr-h').value) || 100;
 
