@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (精修版面)</title>
+    <title>QR Code 智慧系統 (置中版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -334,6 +334,20 @@
         </div>
 
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
+            <label>QR Code 儲存格尺寸 (QR Cell Size)：</label>
+            <div style="display:flex; gap:5px; align-items:center;">
+                <div style="flex:1;">
+                    <label style="font-size:12px;">欄寬 (Col W)</label>
+                    <input type="number" id="def-qr-w" placeholder="20" step="0.1">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:12px;">列高 (Row H)</label>
+                    <input type="number" id="def-qr-h" placeholder="100" step="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label data-i18n="lblLangManage">語言管理 (Language Manage)：</label>
             <div class="lang-manage-list" id="lang-list-container">
                 </div>
@@ -408,8 +422,9 @@
         title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
         defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, // 4x6 inch
-        excelSpacer: { colWidth: 1, rowHeight: 5 }, // 預設間隔: 1, 5
-        excelFontSize: 5, // 預設字體: 5
+        excelSpacer: { colWidth: 1, rowHeight: 5 }, // 預設間隔
+        excelFontSize: 5, // 預設字體
+        excelQrSize: { col: 20, row: 100 }, // 新增：預設 QR 儲存格尺寸
         lastPrintState: null
     };
 
@@ -430,7 +445,7 @@
             customUnit: appConfig.defaultPaper.unit,
             orientation: 'portrait',
             cols: 3,
-            margins: { t:0, b:0, l:0.5, r:0, unit:'cm' } // 左邊距預設 0.5
+            margins: { t:0, b:0, l:0.5, r:0, unit:'cm' } 
         };
         document.getElementById('print-size').value = p.size;
         document.getElementById('print-orientation').value = p.orientation;
@@ -512,28 +527,13 @@
             header: 0, footer: 0 
         };
 
-        let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
-        if(printSizeVal === 'custom' || printSizeVal === 'id_card') {
-             let wCm, hCm;
-             if(printSizeVal === 'id_card') { wCm = 10.16; hCm = 15.24; } 
-             else {
-                 let rawW = parseFloat(document.getElementById('custom-width').value) || 10.16;
-                 let cUnit = document.getElementById('custom-unit').value;
-                 wCm = (cUnit==='in') ? rawW*2.54 : (cUnit==='mm' ? rawW/10 : rawW);
-                 let rawH = parseFloat(document.getElementById('custom-height').value) || 15.24;
-                 let hCmRaw = (cUnit==='in') ? rawH*2.54 : (cUnit==='mm' ? rawH/10 : rawH);
-                 if(printOrientation === 'landscape') { let temp = wCm; wCm = hCmRaw; hCm = temp; }
-             }
-             totalWidthUnits = wCm * (85 / 21);
-        }
-
         // 間隔設定
         let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
         
-        // QR Code 存放欄寬 (Data Col) 固定為 9.20
-        let mainColWidth = 9.20; 
+        // QR Code 存放欄寬 (User Configured)
+        let mainColWidth = parseFloat(appConfig.excelQrSize.col) || 20; 
 
-        // 欄位配置：資料(9.20), 間隔, 資料(9.20), 間隔...
+        // 欄位配置：資料, 間隔, 資料, 間隔...
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
             colsConfig.push({ width: mainColWidth }); 
@@ -547,7 +547,7 @@
         let validItemIndex = 0; 
         
         // 尺寸設定
-        const IMG_H = 53.25; 
+        const IMG_H = parseFloat(appConfig.excelQrSize.row) || 100; // User Configured Row Height
         const TXT_H = 12; // 文字列高設定為 12
         const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 5; 
         
@@ -578,9 +578,24 @@
 
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
-                    // 使用 fixed size: 1.8cm x 1.8cm
+                    
+                    // --- 圖片置中計算 ---
+                    // 標準欄寬 1單位 ~= 7px, 列高 1單位 ~= 1.33px (ExcelJS 估算值, 實際受字體影響)
+                    // 更精準的做法是使用 nativeColOff (EMU). 1px = 9525 EMUs.
+                    // 這裡採用標準估算:
+                    // Col Width 20 ~= 140-150px. Row Height 100 ~= 133px.
+                    // 為了通用性，我們使用固定偏移量 EMU 計算，假設 1 Excel Col Unit = 7px width (Arial 10), 1 Excel Row Unit = 1.33px height
+                    
+                    // 估算儲存格像素大小
+                    let cellPxW = mainColWidth * 7; 
+                    let cellPxH = IMG_H * 1.33;
+                    
+                    // 計算置中偏移 (EMUs)
+                    let offX = Math.max(0, (cellPxW - QR_PIXELS) / 2) * 9525;
+                    let offY = Math.max(0, (cellPxH - QR_PIXELS) / 2) * 9525;
+
                     worksheet.addImage(imageId, {
-                        tl: { col: excelColIndex, row: imgRowNumber - 1 },
+                        tl: { col: excelColIndex, row: imgRowNumber - 1, nativeColOff: offX, nativeRowOff: offY },
                         ext: { width: QR_PIXELS, height: QR_PIXELS },
                         editAs: 'undefined' 
                     });
@@ -593,10 +608,8 @@
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex + 1);
                 textCell.value = val;
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-                // 字體大小改為 5
+                // 字體大小設定
                 textCell.font = { size: appConfig.excelFontSize, bold: true };
-
-                // 移除邊框 (已刪除相關代碼)
 
                 validItemIndex++;
             }
@@ -608,7 +621,7 @@
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- Other Functions (Standard) ---
+    // --- Other Functions ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -782,6 +795,10 @@
         document.getElementById('def-spacer-w').value = appConfig.excelSpacer.colWidth;
         document.getElementById('def-spacer-h').value = appConfig.excelSpacer.rowHeight;
         document.getElementById('def-font-size').value = appConfig.excelFontSize;
+        // QR Cell Size
+        document.getElementById('def-qr-w').value = appConfig.excelQrSize.col;
+        document.getElementById('def-qr-h').value = appConfig.excelQrSize.row;
+
         updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
@@ -795,9 +812,14 @@
         appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 15.24;
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
 
+        // 儲存間隔設定
         appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 1;
         appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 5;
         appConfig.excelFontSize = parseFloat(document.getElementById('def-font-size').value) || 5;
+        
+        // 儲存 QR Cell 尺寸
+        appConfig.excelQrSize.col = parseFloat(document.getElementById('def-qr-w').value) || 20;
+        appConfig.excelQrSize.row = parseFloat(document.getElementById('def-qr-h').value) || 100;
 
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
@@ -814,6 +836,7 @@
             if(!parsed.defaultPaper) parsed.defaultPaper = { width: 10.16, height: 15.24, unit: 'cm' };
             if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 1, rowHeight: 5 };
             if(!parsed.excelFontSize) parsed.excelFontSize = 5;
+            if(!parsed.excelQrSize) parsed.excelQrSize = { col: 20, row: 100 };
             appConfig = parsed;
         }
     }
