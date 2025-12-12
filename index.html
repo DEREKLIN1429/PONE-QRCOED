@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (邊距設定版)</title>
+    <title>QR Code 智慧系統 (DEREK LIN 版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -17,7 +17,7 @@
             --bg-color: #f0f2f5;
             --panel-bg: #ffffff;
         }
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); padding: 10px; margin: 0; }
+        body { font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; background-color: var(--bg-color); padding: 10px; margin: 0; padding-bottom: 40px; }
         
         /* 佈局架構 */
         .main-layout {
@@ -36,7 +36,17 @@
         /* 樣式 */
         header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; position: relative; }
         h2 { color: #333; margin: 10px 0 20px 0; font-size: 1.5rem; text-align: center; }
-        .settings-icon { position: absolute; top: 0; right: 0; font-size: 24px; cursor: pointer; background: #fff; padding: 5px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100; }
+        
+        /* 頂部控制區 (設定 icon + 語言選單) */
+        .top-controls {
+            position: absolute; top: 0; right: 0; display: flex; gap: 10px; align-items: center; z-index: 100;
+        }
+        .lang-select {
+            padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff;
+        }
+        .settings-icon { 
+            font-size: 24px; cursor: pointer; background: #fff; padding: 5px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
         
         #camera-wrapper { width: 100%; max-width: 500px; margin: 0 auto 15px auto; display: none; position: relative; }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; cursor: pointer; background: #000; }
@@ -82,18 +92,35 @@
         .custom-size-group input { width: 35%; }
         .custom-size-group select { width: 30%; background-color: #f9f9f9; }
 
-        /* 邊距輸入區 */
         .margin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 5px; }
         .margin-input-wrapper { display: flex; align-items: center; }
-        .margin-input-wrapper span { width: 20px; font-size: 12px; color: #888; }
+        .margin-input-wrapper span { width: 25px; font-size: 12px; color: #888; }
         .margin-input-wrapper input { flex: 1; }
 
         /* Modal */
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; max-height: 80vh; overflow-y: auto; }
         .modal-footer { text-align: right; margin-top: 20px; }
         .form-group { margin-bottom: 15px; }
-        .form-group input { width: 100%; padding: 8px; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+        
+        /* 語言管理列表 */
+        .lang-manage-list { margin-top: 10px; border: 1px solid #eee; padding: 5px; max-height: 100px; overflow-y: auto; }
+        .lang-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #f0f0f0; align-items: center; }
+        .lang-item:last-child { border-bottom: none; }
+        .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; width: auto; height: auto; display: inline-block;}
+        .lang-add-group { display: flex; gap: 5px; margin-top: 10px; }
+        .lang-add-group input { flex: 1; padding: 5px; font-size: 12px; }
+        .btn-sm-add { background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; width: auto; height: auto; font-size: 12px; }
+
+        /* 作者署名 */
+        .author-info {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background-color: #333; color: #fff;
+            text-align: center; padding: 8px;
+            font-size: 14px; letter-spacing: 1px;
+            z-index: 900;
+        }
 
     </style>
 </head>
@@ -103,25 +130,36 @@
     
     <div class="left-column">
         <header>
-            <div class="settings-icon" onclick="openSettings()">⚙️</div>
-            <h2 id="app-title">QR Code 智慧系統</h2>
+            <div class="top-controls">
+                <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)">
+                    </select>
+                <div class="settings-icon" onclick="openSettings()">⚙️</div>
+            </div>
+
+            <h2 id="app-title" data-i18n="appTitle">QR Code 智慧系統</h2>
             
             <div id="camera-wrapper">
                 <div id="reader"></div>
-                <div class="camera-hint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
+                <div class="camera-hint" data-i18n="camHint">👆 點擊畫面：拍照並 OCR 文字辨識</div>
             </div>
             <div id="ocr-status"></div>
 
             <div class="btn-group">
-                <button class="btn-scan" onclick="startQRScan()"><span class="icon">📸</span>掃描</button>
-                <button class="btn-ocr" onclick="triggerOCRFile()"><span class="icon">📄</span>圖片 OCR</button>
-                <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span>清除全部</button>
+                <button class="btn-scan" onclick="startQRScan()">
+                    <span class="icon">📸</span><span data-i18n="btnScan">掃描</span>
+                </button>
+                <button class="btn-ocr" onclick="triggerOCRFile()">
+                    <span class="icon">📄</span><span data-i18n="btnOcr">圖片 OCR</span>
+                </button>
+                <button class="btn-clear" onclick="clearAll()">
+                    <span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span>
+                </button>
                 <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
             </div>
 
             <div class="batch-input-container">
-                <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料 (可貼上多筆)...">
-                <button class="btn-batch-add" onclick="processBatchInput()">⬇️ 加入</button>
+                <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料 (Enter 可確定)..." data-i18n-ph="batchPlace">
+                <button class="btn-batch-add" onclick="processBatchInput()" data-i18n="btnAdd">⬇️ 加入</button>
             </div>
         </header>
 
@@ -129,20 +167,20 @@
     </div>
 
     <div class="right-column">
-        <div class="print-settings-title">🖨️ Excel 列印設定</div>
+        <div class="print-settings-title" data-i18n="printSettings">🖨️ Excel 列印設定</div>
         
         <div class="setting-group">
-            <label>紙張大小 (Paper Size)</label>
+            <label data-i18n="paperSize">紙張大小 (Paper Size)</label>
             <select id="print-size" onchange="toggleCustomSize()">
                 <option value="9">A4 (210 x 297 mm)</option>
                 <option value="1">Letter (8.5 x 11 in)</option>
                 <option value="11">A5 (148 x 210 mm)</option>
-                <option value="custom">手動設定 (Custom)</option>
+                <option value="custom" data-i18n="optCustom">手動設定 (Custom)</option>
             </select>
             
             <div id="custom-size-inputs" class="custom-size-group" style="display:none;">
-                <input type="number" id="custom-width" placeholder="寬" value="100">
-                <input type="number" id="custom-height" placeholder="高" value="150">
+                <input type="number" id="custom-width" placeholder="W" value="100">
+                <input type="number" id="custom-height" placeholder="H" value="150">
                 <select id="custom-unit">
                     <option value="mm">mm</option>
                     <option value="in">inch</option>
@@ -151,52 +189,52 @@
         </div>
 
         <div class="setting-group">
-            <label>方向 (Orientation)</label>
+            <label data-i18n="orientation">方向 (Orientation)</label>
             <select id="print-orientation">
-                <option value="portrait">直向 (Portrait)</option>
-                <option value="landscape">橫向 (Landscape)</option>
+                <option value="portrait" data-i18n="optPortrait">直向 (Portrait)</option>
+                <option value="landscape" data-i18n="optLandscape">橫向 (Landscape)</option>
             </select>
         </div>
 
         <div class="setting-group">
-            <label>每行欄數 (Columns)</label>
+            <label data-i18n="columns">每行欄數 (Columns)</label>
             <select id="print-cols">
-                <option value="3">3 欄</option>
-                <option value="4">4 欄</option>
-                <option value="5">5 欄</option>
-                <option value="2">2 欄</option>
-                <option value="1">1 欄</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
             </select>
         </div>
 
         <div class="setting-group">
-            <label>頁面邊距 (Margins)</label>
+            <label data-i18n="margins">頁面邊距 (Margins)</label>
             <div class="margin-grid">
                 <div class="margin-input-wrapper">
-                    <span>上</span>
+                    <span data-i18n="mTop">上</span>
                     <input type="number" id="margin-top" value="10" step="1">
                 </div>
                 <div class="margin-input-wrapper">
-                    <span>下</span>
+                    <span data-i18n="mBottom">下</span>
                     <input type="number" id="margin-bottom" value="10" step="1">
                 </div>
                 <div class="margin-input-wrapper">
-                    <span>左</span>
+                    <span data-i18n="mLeft">左</span>
                     <input type="number" id="margin-left" value="10" step="1">
                 </div>
                 <div class="margin-input-wrapper">
-                    <span>右</span>
+                    <span data-i18n="mRight">右</span>
                     <input type="number" id="margin-right" value="10" step="1">
                 </div>
             </div>
             <select id="margin-unit" style="margin-top:5px;">
-                <option value="mm">公釐 (mm)</option>
-                <option value="in">英吋 (inch)</option>
+                <option value="mm">mm</option>
+                <option value="in">inch</option>
             </select>
         </div>
 
         <button class="btn-excel" onclick="exportExcelWithImages()" style="margin-top: 10px;">
-            <span class="icon">📊</span>依設定轉出 EXCEL
+            <span class="icon">📊</span><span data-i18n="btnExcel">依設定轉出 EXCEL</span>
         </button>
     </div>
 
@@ -204,26 +242,232 @@
 
 <div id="settingsModal" class="modal">
     <div class="modal-content">
-        <h3>系統設定</h3>
-        <div class="form-group"><label>主標題名稱：</label><input type="text" id="set-title"></div>
-        <div class="form-group"><label>總格數設定：</label><input type="number" id="set-count" min="1" max="100"></div>
+        <h3 data-i18n="settingsTitle">系統設定</h3>
+        <div class="form-group">
+            <label data-i18n="lblAppTitle">主標題名稱：</label>
+            <input type="text" id="set-title">
+        </div>
+        <div class="form-group">
+            <label data-i18n="lblGridCount">總格數設定：</label>
+            <input type="number" id="set-count" min="1" max="100">
+        </div>
+
+        <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
+            <label data-i18n="lblLangManage">語言管理 (Language Manage)：</label>
+            <div class="lang-manage-list" id="lang-list-container">
+                </div>
+            <div class="lang-add-group">
+                <input type="text" id="new-lang-code" placeholder="Code (e.g. jp)">
+                <input type="text" id="new-lang-name" placeholder="Name (e.g. 日本語)">
+                <button class="btn-sm-add" onclick="addNewLanguage()">Add</button>
+            </div>
+        </div>
+
         <div class="modal-footer">
-            <button onclick="saveSettings()" style="background-color:#28a745;color:white;padding:8px;border:none;border-radius:4px;">儲存</button>
-            <button onclick="closeSettings()" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px;">取消</button>
+            <button onclick="saveSettings()" style="background-color:#28a745;color:white;padding:8px;border:none;border-radius:4px;" data-i18n="btnSave">儲存</button>
+            <button onclick="closeSettings()" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px;" data-i18n="btnCancel">取消</button>
         </div>
     </div>
 </div>
 
+<div class="author-info">Author: DEREK LIN</div>
+
 <script>
-    let appConfig = { title: "QR Code 智慧系統", gridCount: 12, fontSize: 12 };
+    // --- 翻譯字典 ---
+    const translations = {
+        "zh-TW": {
+            appTitle: "QR Code 智慧系統",
+            camHint: "👆 點擊畫面：拍照並 OCR 文字辨識",
+            btnScan: "掃描",
+            btnOcr: "圖片 OCR",
+            btnClear: "清除全部",
+            btnExcel: "依設定轉出 EXCEL",
+            btnAdd: "⬇️ 加入",
+            batchPlace: "快速輸入資料 (Enter 可確定)...",
+            printSettings: "🖨️ Excel 列印設定",
+            paperSize: "紙張大小 (Paper Size)",
+            optCustom: "手動設定 (Custom)",
+            orientation: "方向 (Orientation)",
+            optPortrait: "直向 (Portrait)",
+            optLandscape: "橫向 (Landscape)",
+            columns: "每行欄數 (Columns)",
+            margins: "頁面邊距 (Margins)",
+            mTop: "上", mBottom: "下", mLeft: "左", mRight: "右",
+            settingsTitle: "系統設定",
+            lblAppTitle: "主標題名稱：",
+            lblGridCount: "總格數設定：",
+            lblLangManage: "語言管理 (Language Manage)：",
+            btnSave: "儲存",
+            btnCancel: "取消",
+            gridLabel: "格位 ",
+            gridPlace: "待輸入...",
+            alertEmpty: "目前沒有資料可以匯出！",
+            alertFull: "⚠️ 欄位已滿！",
+            statusCam: "相機啟動中... (10秒自動關閉)",
+            statusOCR: "⏳ 正在辨識...",
+            statusDone: "✅ 完成",
+            statusExcel: "⏳ 正在產生 Excel...",
+            statusExcelDone: "✅ Excel 下載完成！"
+        },
+        "en-US": {
+            appTitle: "Smart QR Code System",
+            camHint: "👆 Click: Capture & OCR",
+            btnScan: "Scan",
+            btnOcr: "Image OCR",
+            btnClear: "Clear All",
+            btnExcel: "Export Excel",
+            btnAdd: "⬇️ Add",
+            batchPlace: "Quick input (Press Enter)...",
+            printSettings: "🖨️ Excel Print Settings",
+            paperSize: "Paper Size",
+            optCustom: "Custom Size",
+            orientation: "Orientation",
+            optPortrait: "Portrait",
+            optLandscape: "Landscape",
+            columns: "Columns",
+            margins: "Margins",
+            mTop: "T", mBottom: "B", mLeft: "L", mRight: "R",
+            settingsTitle: "System Settings",
+            lblAppTitle: "App Title:",
+            lblGridCount: "Grid Count:",
+            lblLangManage: "Language Manage:",
+            btnSave: "Save",
+            btnCancel: "Cancel",
+            gridLabel: "Slot ",
+            gridPlace: "Waiting...",
+            alertEmpty: "No data to export!",
+            alertFull: "⚠️ Grid is full!",
+            statusCam: "Camera active... (10s auto-off)",
+            statusOCR: "⏳ Processing...",
+            statusDone: "✅ Done",
+            statusExcel: "⏳ Generating Excel...",
+            statusExcelDone: "✅ Download Complete!"
+        }
+    };
+
+    let appConfig = { 
+        title: "QR Code 智慧系統", 
+        gridCount: 12, 
+        currentLang: "zh-TW",
+        // 預設可用語言列表
+        availableLangs: [
+            { code: "zh-TW", name: "繁體中文" },
+            { code: "en-US", name: "English" }
+        ]
+    };
+
     let html5QrCode;
     let scanTimeout; 
 
-    window.onload = function() { loadConfig(); initGrid(); };
+    window.onload = function() { 
+        loadConfig(); 
+        initLangSelect(); // 初始化語言選單
+        applyLanguage(appConfig.currentLang); // 套用語言
+        initGrid(); 
+        
+        // --- 新增：Enter 鍵監聽 ---
+        document.getElementById('batch-input').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                processBatchInput();
+            }
+        });
+    };
+
+    // --- 語言功能 ---
+    function initLangSelect() {
+        const select = document.getElementById('main-lang-select');
+        select.innerHTML = "";
+        appConfig.availableLangs.forEach(lang => {
+            let option = document.createElement('option');
+            option.value = lang.code;
+            option.text = lang.name;
+            select.appendChild(option);
+        });
+        select.value = appConfig.currentLang;
+        updateLangManageList();
+    }
+
+    function changeLanguage(langCode) {
+        appConfig.currentLang = langCode;
+        applyLanguage(langCode);
+        saveSettingsDirectly(); // 記錄使用者選擇
+    }
+
+    function applyLanguage(langCode) {
+        // 如果該語言沒有定義字典，回退到英文或中文
+        const t = translations[langCode] || translations["en-US"] || translations["zh-TW"];
+        
+        // 更新有 data-i18n 的元素
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key]) el.innerText = t[key];
+        });
+
+        // 更新 Placeholder
+        document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+            const key = el.getAttribute('data-i18n-ph');
+            if (t[key]) el.placeholder = t[key];
+        });
+
+        // 更新標題 (如果使用者沒改過標題，就跟著語言變)
+        // 這裡邏輯：如果標題等於預設的翻譯標題，切換時就跟著變，否則保留使用者自訂
+        // 但為了簡單，這裡直接更新 UI 上的顯示，實際 input value 在 settings modal 打開時更新
+        document.getElementById('app-title').innerText = appConfig.title; // 這裡還是以 config 為主
+    }
+
+    // --- 語言管理 (新增/刪除) ---
+    function updateLangManageList() {
+        const container = document.getElementById('lang-list-container');
+        container.innerHTML = "";
+        appConfig.availableLangs.forEach((lang, index) => {
+            let div = document.createElement('div');
+            div.className = 'lang-item';
+            div.innerHTML = `
+                <span>${lang.name} (${lang.code})</span>
+                ${appConfig.availableLangs.length > 1 ? `<button class="btn-sm-del" onclick="removeLanguage(${index})">Del</button>` : ''}
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function addNewLanguage() {
+        const code = document.getElementById('new-lang-code').value.trim();
+        const name = document.getElementById('new-lang-name').value.trim();
+        if(!code || !name) { alert("Code and Name required!"); return; }
+        
+        appConfig.availableLangs.push({ code: code, name: name });
+        document.getElementById('new-lang-code').value = "";
+        document.getElementById('new-lang-name').value = "";
+        
+        updateLangManageList();
+        // 重新整理主選單
+        const select = document.getElementById('main-lang-select');
+        let option = document.createElement('option');
+        option.value = code; option.text = name;
+        select.appendChild(option);
+    }
+
+    function removeLanguage(index) {
+        if(!confirm("Delete this language option?")) return;
+        const removed = appConfig.availableLangs.splice(index, 1);
+        
+        // 如果刪除的是目前選中的，切換回第一個
+        if (removed[0].code === appConfig.currentLang && appConfig.availableLangs.length > 0) {
+            appConfig.currentLang = appConfig.availableLangs[0].code;
+            changeLanguage(appConfig.currentLang);
+        }
+        
+        updateLangManageList();
+        initLangSelect(); // 重繪主選單
+    }
+
 
     function initGrid() {
         const gridContainer = document.getElementById('main-grid');
         gridContainer.innerHTML = ""; 
+        
+        // 使用翻譯
+        const t = translations[appConfig.currentLang] || translations["en-US"];
         document.getElementById('app-title').innerText = appConfig.title;
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -232,13 +476,13 @@
 
             let label = document.createElement('div');
             label.className = 'grid-label';
-            label.innerText = '格位 ' + i;
+            label.innerText = (t.gridLabel || "Slot ") + i; // i18n label
 
             let input = document.createElement('input');
             input.type = 'text';
             input.className = 'grid-input';
             input.id = 'data-' + i;
-            input.placeholder = '待輸入...';
+            input.placeholder = t.gridPlace || "Waiting..."; // i18n placeholder
             input.onkeyup = function() { generateSingleCode(i); };
 
             let codeDiv = document.createElement('div');
@@ -267,15 +511,18 @@
         let textContainer = document.getElementById('text-info-' + index);
         container.innerHTML = ""; 
         textContainer.innerText = inputVal;
-        if (inputVal === "") { container.innerText = "(空)"; return; }
+        if (inputVal === "") { container.innerText = "(Empty)"; return; }
         try { new QRCode(container, { text: inputVal, width: 100, height: 100, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M }); } catch(e) {}
     }
 
     function processBatchInput() {
         let inputField = document.getElementById('batch-input');
         let text = inputField.value.trim();
-        if (!text) { alert("請輸入資料！"); return; }
+        if (!text) { return; } // 空值不處理
         let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
+        
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+
         for (let part of parts) {
             let placed = false;
             for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -284,14 +531,18 @@
                     input.value = part; generateSingleCode(i); placed = true; break;
                 }
             }
-            if (!placed) { alert("⚠️ 欄位已滿！無法再輸入更多資料。"); return; }
+            if (!placed) { alert(t.alertFull); return; }
         }
         inputField.value = "";
     }
 
     function fillData(text) {
-        if (!confirm("掃描到的資料：\n\n" + text + "\n\n確定要填入嗎？")) return;
+        // 簡單提示，不使用 i18n 複雜邏輯，直接用通用符號
+        if (!confirm("Data: \n" + text + "\n\nConfirm?")) return;
         let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
+        
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+        
         for (let part of parts) {
             let placed = false;
             for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -300,7 +551,7 @@
                     input.value = part; generateSingleCode(i); placed = true; break;
                 }
             }
-            if (!placed) { alert("⚠️ 欄位已滿！"); return; }
+            if (!placed) { alert(t.alertFull); return; }
         }
     }
 
@@ -314,14 +565,15 @@
         }
     }
 
-    // --- Excel 匯出 (包含邊距設定) ---
     async function exportExcelWithImages() {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+        
         let hasData = false;
         for(let i=1; i<=appConfig.gridCount; i++){ if(document.getElementById('data-'+i).value.trim() !== "") hasData = true; }
-        if(!hasData) { alert("目前沒有資料可以匯出！"); return; }
+        if(!hasData) { alert(t.alertEmpty); return; }
 
         const statusDiv = document.getElementById('ocr-status');
-        statusDiv.innerText = "⏳ 正在產生 Excel...";
+        statusDiv.innerText = t.statusExcel;
 
         const printSizeVal = document.getElementById('print-size').value;
         const printOrientation = document.getElementById('print-orientation').value;
@@ -339,17 +591,13 @@
             fitToPage: false,
         };
 
-        // --- 處理邊距 ---
         const marginUnit = document.getElementById('margin-unit').value;
         const marginTop = parseFloat(document.getElementById('margin-top').value) || 0;
         const marginBottom = parseFloat(document.getElementById('margin-bottom').value) || 0;
         const marginLeft = parseFloat(document.getElementById('margin-left').value) || 0;
         const marginRight = parseFloat(document.getElementById('margin-right').value) || 0;
 
-        // ExcelJS 預設 margins 使用 inches
-        const convertToInches = (val) => {
-            return (marginUnit === 'mm') ? val / 25.4 : val;
-        };
+        const convertToInches = (val) => { return (marginUnit === 'mm') ? val / 25.4 : val; };
 
         worksheet.pageSetup.margins = {
             top: convertToInches(marginTop),
@@ -359,13 +607,11 @@
             header: 0, footer: 0 
         };
 
-        // 欄寬計算
         let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
         if(printSizeVal === 'custom') {
              let rawW = parseFloat(document.getElementById('custom-width').value) || 100;
              let unit = document.getElementById('custom-unit').value;
              let widthMm = (unit === 'in') ? rawW * 25.4 : rawW;
-             
              if(printOrientation === 'landscape') { 
                  let rawH = parseFloat(document.getElementById('custom-height').value) || 150;
                  let heightMm = (unit === 'in') ? rawH * 25.4 : rawH;
@@ -383,7 +629,6 @@
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
-            
             if (val !== "") {
                 let colIndex = validItemIndex % printCols; 
                 let rowGroupIndex = Math.floor(validItemIndex / printCols);
@@ -409,7 +654,7 @@
                     });
                 } else {
                     let cell = worksheet.getCell(imgRowNumber, colIndex + 1);
-                    cell.value = "(無圖)";
+                    cell.value = "(No Image)";
                     cell.alignment = { vertical: 'middle', horizontal: 'center' };
                 }
 
@@ -428,15 +673,17 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_PrintLayout.xlsx");
+        saveAs(blob, "QRCode_Full.xlsx");
         
-        statusDiv.innerText = "✅ Excel 下載完成 (含邊距設定)！";
+        statusDiv.innerText = t.statusExcelDone;
     }
 
     function startQRScan() {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
         const wrapper = document.getElementById('camera-wrapper');
         wrapper.style.display = "block";
-        document.getElementById('ocr-status').innerText = "相機啟動中... (10秒自動關閉)";
+        document.getElementById('ocr-status').innerText = t.statusCam;
+        
         html5QrCode = new Html5Qrcode("reader");
         resetScanTimer();
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
@@ -446,7 +693,7 @@
                 let videoElement = document.querySelector("#reader video");
                 if(videoElement) videoElement.onclick = function() { captureAndOCR(videoElement); };
             }, 1000);
-        }).catch(err => { alert("無法啟動相機：" + err); wrapper.style.display = "none"; });
+        }).catch(err => { alert("Cam Error:" + err); wrapper.style.display = "none"; });
     }
 
     function stopScan() {
@@ -459,31 +706,33 @@
     }
     function resetScanTimer() {
         if(scanTimeout) clearTimeout(scanTimeout);
-        scanTimeout = setTimeout(() => { stopScan(); document.getElementById('ocr-status').innerText = "💤 相機關閉"; }, 10000);
+        scanTimeout = setTimeout(() => { stopScan(); document.getElementById('ocr-status').innerText = ""; }, 10000);
     }
     function captureAndOCR(video) {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
         let canvas = document.createElement("canvas");
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext("2d").drawImage(video, 0, 0);
-        document.getElementById('ocr-status').innerText = "⏳ 正在辨識...";
+        document.getElementById('ocr-status').innerText = t.statusOCR;
         stopScan(); 
         Tesseract.recognize(canvas.toDataURL('image/png'), 'eng+chi_tra').then(({ data: { text } }) => {
-            document.getElementById('ocr-status').innerText = "✅ 辨識完成";
+            document.getElementById('ocr-status').innerText = t.statusDone;
             fillData(text.replace(/,/g, " "));
         });
     }
     function triggerOCRFile() { document.getElementById('ocr-file-input').click(); }
     function processOCRFile(input) {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
         if (input.files && input.files[0]) {
-            document.getElementById('ocr-status').innerText = "⏳ 讀取中...";
+            document.getElementById('ocr-status').innerText = t.statusOCR;
             Tesseract.recognize(input.files[0], 'eng+chi_tra').then(({ data: { text } }) => {
-                document.getElementById('ocr-status').innerText = "✅ 完成";
+                document.getElementById('ocr-status').innerText = t.statusDone;
                 fillData(text.replace(/,/g, " "));
             });
         }
     }
     function clearAll() {
-        if(!confirm("確定清除全部？")) return;
+        if(!confirm("Clear All?")) return;
         for (let i = 1; i <= appConfig.gridCount; i++) {
             document.getElementById('data-' + i).value = "";
             generateSingleCode(i);
@@ -492,19 +741,32 @@
     function openSettings() {
         document.getElementById('set-title').value = appConfig.title;
         document.getElementById('set-count').value = appConfig.gridCount;
+        updateLangManageList(); // 更新設定內的語言列表
         document.getElementById('settingsModal').style.display = "block";
     }
     function closeSettings() { document.getElementById('settingsModal').style.display = "none"; }
+    
     function saveSettings() {
         appConfig.title = document.getElementById('set-title').value;
         appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 12;
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
+        applyLanguage(appConfig.currentLang); // 確保標題更新
         closeSettings();
+    }
+    function saveSettingsDirectly() {
+        // 只存不關閉 (用於語言切換)
+        localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
     }
     function loadConfig() {
         let saved = localStorage.getItem('qrAppConfig');
-        if (saved) appConfig = JSON.parse(saved);
+        if (saved) {
+            let parsed = JSON.parse(saved);
+            // 確保新舊版本相容 (補上缺少的欄位)
+            if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
+            if(!parsed.currentLang) parsed.currentLang = "zh-TW";
+            appConfig = parsed;
+        }
     }
 </script>
 </body>
