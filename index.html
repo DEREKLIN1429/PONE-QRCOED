@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V1.21 - 可調邊界)</title>
+    <title>QR Code 智慧系統 (V1.22 - 點擊掃描版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -35,12 +35,29 @@
         .settings-icon { font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; transition: background 0.3s; }
         .settings-icon:hover { background: #e0e0e0; }
         
-        #camera-wrapper { width: 100%; max-width: 500px; margin: 0 auto 15px auto; display: none; position: relative; overflow: hidden; border-radius: 8px;}
-        #reader { width: 100%; border: 4px solid #333; border-radius: 8px; cursor: pointer; background: #000; }
+        /* 修改相機區域樣式，增加手型游標 */
+        #camera-wrapper { 
+            width: 100%; max-width: 500px; margin: 0 auto 15px auto; 
+            display: none; position: relative; overflow: hidden; border-radius: 8px;
+            cursor: pointer; /* 讓使用者知道可以點 */
+            background: #000;
+            min-height: 250px;
+        }
+        #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; }
+        
         #scan-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 4px solid #00ff00; box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 10; border-radius: 20px; pointer-events: none; display: none; }
         #scan-overlay::after { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px; background: #00ff00; box-shadow: 0 0 4px #00ff00; animation: scanning 2s infinite ease-in-out; }
         @keyframes scanning { 0% { top: 10px; opacity: 0; } 50% { opacity: 1; } 100% { top: 230px; opacity: 0; } }
-        .camera-hint { position: absolute; bottom: 10px; left: 0; right: 0; color: white; text-align: center; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 20; pointer-events: none; font-size: 14px; }
+        
+        /* 調整提示文字樣式，使其在暫停時更明顯 */
+        .camera-hint { 
+            position: absolute; bottom: 0; left: 0; right: 0; top: 0;
+            display: flex; justify-content: center; align-items: center;
+            color: white; text-align: center; font-weight: bold; 
+            text-shadow: 1px 1px 4px black; z-index: 20; pointer-events: none; 
+            font-size: 18px; background: rgba(0,0,0,0.3);
+            flex-direction: column;
+        }
         
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
@@ -111,14 +128,16 @@
                 <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料 (Enter 可確定)..." data-i18n-ph="batchPlace">
                 <button class="btn-batch-add" onclick="processBatchInput()" data-i18n="btnAdd">⬇️ 加入</button>
             </div>
-            <div id="camera-wrapper">
+            
+            <div id="camera-wrapper" onclick="toggleCamera()">
                 <div id="scan-overlay"></div>
                 <div id="reader"></div>
-                <div id="cam-hint-text" class="camera-hint" data-i18n="camHint"></div>
+                <div id="cam-hint-text" class="camera-hint">👆 點擊畫面開始掃描</div>
             </div>
+            
             <div id="ocr-status"></div>
             <div class="btn-group">
-                <button class="btn-scan" onclick="startCameraMode('qr')"><span class="icon">📸</span><span data-i18n="btnScan">掃描</span></button>
+                <button class="btn-scan" onclick="initCameraWrapper()"><span class="icon">📸</span><span data-i18n="btnScan">啟用掃描器</span></button>
                 <button class="btn-img-export" onclick="openImgExportModal()"><span class="icon">🖼️</span><span data-i18n="btnImgExport">轉出圖片</span></button>
                 <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出客製化 EXCEL</span></button>
                 <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span></button>
@@ -130,11 +149,11 @@
     <div class="right-column">
         <div class="print-settings-title" data-i18n="printSettings">🖨️ 客製化輸出說明</div>
         <div class="info-box">
-            此模式為 <b>粗框線版 V4</b>。<br><br>
-            <b>✨ 新功能：點擊下方 QR Code 可複製圖片！</b><br><br>
+            此模式為 <b>粗框線版 V5</b>。<br><br>
+            <b>✨ 掃描新功能：點擊畫面開始 -> 掃描 -> 自動暫停 -> 點擊繼續</b><br><br>
             Excel 輸出邏輯如下：<br>
             • 資料欄 B, D, F, H (寬度 12)<br>
-            • 特殊列高：A11=46.1, A15=12, A16=5.6<br>
+            • 特殊列高：A4, A7, A10, A13 = 12<br>
             • 序列順序：<b>B2→D2→F2→H2...</b><br>
             • 圖片<b>背景填滿</b> + <b>粗外框</b><br>
         </div>
@@ -206,26 +225,26 @@
     const translations = {
         "zh-TW": {
             appTitle: "QR Code 智慧系統",
-            camHint: "掃描中... 成功後自動填入",
-            btnScan: "連續掃描", btnImgExport: "轉出圖片", btnClear: "清除全部", btnExcel: "轉出客製化 EXCEL",
+            camHint: "👆 點擊畫面開始掃描",
+            btnScan: "啟用掃描器", btnImgExport: "轉出圖片", btnClear: "清除全部", btnExcel: "轉出客製化 EXCEL",
             btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料 (Enter 可確定)...",
             printSettings: "🖨️ 客製化輸出說明",
             settingsTitle: "系統設定", lblAppTitle: "主標題名稱：", lblGridCount: "總格數設定：", lblLangManage: "語言管理 (Language Manage)：",
             btnSave: "儲存", btnCancel: "取消", gridLabel: "格位 ", gridPlace: "待輸入...",
             alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
-            statusCam: "相機啟動中...", statusDone: "✅ 完成",
+            statusCam: "相機就緒，請點擊畫面...", statusDone: "✅ 完成",
             statusExcel: "⏳ 正在產生客製化 Excel...", statusExcelDone: "✅ 下載完成！"
         },
         "en-US": {
             appTitle: "Smart QR Code System",
-            camHint: "Scanning... Auto-fills on success",
-            btnScan: "Cont. Scan", btnImgExport: "Export Images", btnClear: "Clear All", btnExcel: "Export Custom Excel",
+            camHint: "👆 Tap here to scan",
+            btnScan: "Enable Scanner", btnImgExport: "Export Images", btnClear: "Clear All", btnExcel: "Export Custom Excel",
             btnAdd: "⬇️ Add", batchPlace: "Quick input (Press Enter)...",
             printSettings: "🖨️ Custom Export Info",
             settingsTitle: "System Settings", lblAppTitle: "App Title:", lblGridCount: "Grid Count:", lblLangManage: "Language Manage:",
             btnSave: "Save", btnCancel: "Cancel", gridLabel: "Slot ", gridPlace: "Waiting...",
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
-            statusCam: "Camera active...", statusDone: "✅ Done",
+            statusCam: "Camera ready, tap to scan...", statusDone: "✅ Done",
             statusExcel: "⏳ Generating Excel...", statusExcelDone: "✅ Download Complete!"
         }
     };
@@ -234,12 +253,11 @@
         title: "QR Code 智慧系統", gridCount: 20, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
         excelFontSize: 6,
-        // 新增預設邊界設定 (L:0.1, R:0, T:0, B:0)
         printMargins: { left: 0.1, right: 0, top: 0, bottom: 0 }
     };
 
     let html5QrCode;
-    let currentMode = null; 
+    let isScanning = false; // 追蹤掃描狀態
     let lastScannedText = "";
     let lastScanTime = 0;
 
@@ -260,7 +278,102 @@
         document.getElementById('batch-input').addEventListener('keydown', function(event) { if (event.key === 'Enter') processBatchInput(); });
     };
 
-    // --- 新增功能：複製 QR Code 到剪貼簿 ---
+    // --- 相機控制邏輯 (修正版) ---
+    
+    // 1. 初始化相機區域 (顯示但不自動開始)
+    function initCameraWrapper() {
+        const wrapper = document.getElementById('camera-wrapper');
+        const hint = document.getElementById('cam-hint-text');
+        wrapper.style.display = "block";
+        hint.innerText = translations[appConfig.currentLang].camHint;
+        
+        // 確保先清理舊的實例
+        if (html5QrCode) {
+            html5QrCode.clear().then(() => {
+                html5QrCode = null;
+                isScanning = false;
+            }).catch(err => { console.log(err); html5QrCode = null; });
+        }
+        isScanning = false;
+    }
+
+    // 2. 切換掃描狀態 (點擊畫面觸發)
+    function toggleCamera() {
+        if (isScanning) {
+            stopScan();
+        } else {
+            startScan();
+        }
+    }
+
+    function startScan() {
+        if (isScanning) return;
+        
+        const wrapper = document.getElementById('camera-wrapper');
+        const overlay = document.getElementById('scan-overlay');
+        const hint = document.getElementById('cam-hint-text');
+        
+        wrapper.style.display = "block";
+        
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        html5QrCode.start({ facingMode: "environment" }, config, 
+            (decodedText) => {
+                // 掃描成功回調
+                const now = Date.now();
+                if (decodedText === lastScannedText && (now - lastScanTime) < 2000) return;
+                lastScannedText = decodedText;
+                lastScanTime = now;
+                
+                // 1. 填入資料
+                fillData(decodedText, false); 
+                
+                // 2. 停止掃描
+                stopScan(true); 
+            },
+            (errorMessage) => {
+                // 掃描中錯誤忽略
+            }
+        ).then(() => {
+            // 啟動成功
+            isScanning = true;
+            overlay.style.display = "block";
+            hint.style.display = "none"; // 隱藏文字
+        }).catch(err => {
+            alert("Camera Error: " + err);
+            isScanning = false;
+        });
+    }
+
+    function stopScan(isSuccess = false) {
+        if (!html5QrCode || !isScanning) return;
+
+        html5QrCode.stop().then(() => {
+            isScanning = false;
+            const overlay = document.getElementById('scan-overlay');
+            const hint = document.getElementById('cam-hint-text');
+            
+            overlay.style.display = "none";
+            hint.style.display = "flex";
+            
+            if (isSuccess) {
+                hint.innerText = "✅ 掃描成功！點擊畫面繼續";
+                hint.style.color = "#00ff00";
+            } else {
+                hint.innerText = translations[appConfig.currentLang].camHint;
+                hint.style.color = "white";
+            }
+            
+            html5QrCode.clear(); 
+        }).catch(err => console.log(err));
+    }
+
+    // --- 其他功能保持不變 ---
+
     async function copyQrImage(index) {
         const container = document.getElementById('code-img-' + index);
         const canvas = container.querySelector('canvas');
@@ -293,7 +406,6 @@
         }
     }
 
-    // --- ZIP 圖片轉出 ---
     function openImgExportModal() {
         let hasData = false;
         for(let i=1; i<=appConfig.gridCount; i++){ 
@@ -361,7 +473,7 @@
         }
     }
 
-    // --- Excel 匯出 (客製化順序版 V4 - 粗框線 + 自訂邊界) ---
+    // --- Excel 匯出 (列高修正版) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -376,7 +488,6 @@
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('QR Codes');
 
-        // 使用 appConfig 中的設定邊界
         worksheet.pageSetup = { 
             paperSize: 9, orientation: 'portrait', 
             margins: { 
@@ -388,23 +499,14 @@
             }
         };
         
-        // 1. 設定欄寬 (間隔欄 1, 內容欄 12)
         worksheet.columns = [
-            { width: 1 },     // A (Spacer)
-            { width: 12 },    // B (Content - 修正為 12)
-            { width: 1 },     // C (Spacer)
-            { width: 12 },    // D (Content - 修正為 12)
-            { width: 1 },     // E (Spacer)
-            { width: 12 },    // F (Content - 修正為 12)
-            { width: 1 },     // G (Spacer)
-            { width: 12 },    // H (Content - 修正為 12)
-            { width: 1 },     // I (Spacer)
+            { width: 1 }, { width: 12 }, { width: 1 }, { width: 12 }, 
+            { width: 1 }, { width: 12 }, { width: 1 }, { width: 12 }, { width: 1 }, 
         ];
 
-        // 2. 定義布局圖 (Sequence Loop)
         const layoutMap = [];
-        const contentCols = [2, 4, 6, 8]; // B, D, F, H
-        const startRows = [2, 5, 8, 11, 14]; // 5 組起始列
+        const contentCols = [2, 4, 6, 8]; 
+        const startRows = [2, 5, 8, 11, 14]; 
 
         startRows.forEach(row => {
             contentCols.forEach(col => {
@@ -412,8 +514,7 @@
             });
         });
 
-        // 3. 設定列高
-        worksheet.getRow(1).height = 5; // Top Margin
+        worksheet.getRow(1).height = 5; 
 
         startRows.forEach(startRow => {
             let h_img = 57.6;
@@ -427,14 +528,15 @@
             if (txtRow === 15) h_txt = 12; 
 
             let spcRow = startRow + 2;
-            if (spcRow === 16) h_spc = 5.6;
+            if (spcRow === 16) h_spc = 5.6; 
+            // 新增規則: 4, 7, 10, 13 列高為 12
+            else if ([4, 7, 10, 13].includes(spcRow)) h_spc = 12;
 
             worksheet.getRow(startRow).height = h_img;
             worksheet.getRow(txtRow).height = h_txt;
             worksheet.getRow(spcRow).height = h_spc;
         });
 
-        // 4. 填入資料與框線設定
         for (let i = 1; i <= appConfig.gridCount; i++) {
             if (i > layoutMap.length) break;
             const pos = layoutMap[i-1];
@@ -455,12 +557,11 @@
                 if (canvasObj) base64Image = canvasObj.toDataURL('image/png');
                 else if (imgObj && imgObj.src) base64Image = imgObj.src;
 
-                // 背景填滿模式
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     worksheet.addImage(imageId, {
-                        tl: { col: excelColIndex - 1, row: imgRowNumber - 1 }, // 左上
-                        br: { col: excelColIndex, row: imgRowNumber },         // 右下
+                        tl: { col: excelColIndex - 1, row: imgRowNumber - 1 }, 
+                        br: { col: excelColIndex, row: imgRowNumber },         
                         editAs: 'oneCell'
                     });
                 }
@@ -471,72 +572,14 @@
                 textCell.font = { size: appConfig.excelFontSize, bold: true, name: 'Arial' };
 
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex);
-                
-                // 設定粗框線 (medium)
-                imgCell.border = { 
-                    top: {style:'medium'}, 
-                    left: {style:'medium'}, 
-                    right: {style:'medium'}, 
-                    bottom: {style:'none'} 
-                };
-                textCell.border = { 
-                    top: {style:'none'}, 
-                    left: {style:'medium'}, 
-                    right: {style:'medium'}, 
-                    bottom: {style:'medium'} 
-                };
+                imgCell.border = { top: {style:'medium'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'none'} };
+                textCell.border = { top: {style:'none'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'medium'} };
             }
         }
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "Custom_Layout_V4_Bold.xlsx");
+        saveAs(blob, "Custom_Layout_V5_ClickScan.xlsx");
         statusDiv.innerText = t.statusExcelDone;
-    }
-
-    // --- 相機與基礎功能 ---
-    function startCameraMode(mode) {
-        const t = translations[appConfig.currentLang] || translations["en-US"];
-        const wrapper = document.getElementById('camera-wrapper');
-        const overlay = document.getElementById('scan-overlay');
-        const hint = document.getElementById('cam-hint-text');
-        const status = document.getElementById('ocr-status');
-        
-        wrapper.style.display = "block";
-        overlay.style.display = "block";
-        hint.innerText = t.camHint;
-        status.innerText = t.statusCam;
-
-        if (html5QrCode) { stopScan().then(() => initHtml5QrCode(mode)); } else { initHtml5QrCode(mode); }
-    }
-
-    function initHtml5QrCode(mode) {
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        html5QrCode.start({ facingMode: "environment" }, config, 
-            (decodedText) => {
-                const now = Date.now();
-                if (decodedText === lastScannedText && (now - lastScanTime) < 1500) return;
-                lastScannedText = decodedText;
-                lastScanTime = now;
-                fillData(decodedText, false); 
-                document.getElementById('ocr-status').innerText = "✅ Scanned: " + decodedText;
-            },
-            (errorMessage) => {}
-        ).catch(err => {
-            alert("Camera Error: " + err);
-            document.getElementById('camera-wrapper').style.display = "none";
-        });
-    }
-
-    function stopScan() {
-        if(html5QrCode) {
-            return html5QrCode.stop().then(() => {
-                html5QrCode.clear();
-                document.getElementById('camera-wrapper').style.display = "none";
-                html5QrCode = null;
-            }).catch(err => console.log(err));
-        }
-        return Promise.resolve();
     }
 
     function fillData(text, needConfirm = true) {
@@ -624,7 +667,6 @@
             let codeDiv = document.createElement('div');
             codeDiv.id = 'code-container-' + i; codeDiv.className = 'code-display-area';
             
-            // 設定點擊複製功能
             let imgContent = document.createElement('div');
             imgContent.id = 'code-img-' + i; 
             imgContent.style.cursor = "pointer";
@@ -679,13 +721,10 @@
     function openSettings() {
         document.getElementById('set-title').value = appConfig.title;
         document.getElementById('set-count').value = appConfig.gridCount;
-        
-        // 載入當前邊界設定到 Input
         document.getElementById('set-margin-left').value = appConfig.printMargins.left;
         document.getElementById('set-margin-right').value = appConfig.printMargins.right;
         document.getElementById('set-margin-top').value = appConfig.printMargins.top;
         document.getElementById('set-margin-bottom').value = appConfig.printMargins.bottom;
-
         updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
@@ -694,15 +733,12 @@
     function saveSettings() {
         appConfig.title = document.getElementById('set-title').value;
         appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 20;
-        
-        // 讀取並儲存邊界設定
         appConfig.printMargins = {
             left: parseFloat(document.getElementById('set-margin-left').value) || 0,
             right: parseFloat(document.getElementById('set-margin-right').value) || 0,
             top: parseFloat(document.getElementById('set-margin-top').value) || 0,
             bottom: parseFloat(document.getElementById('set-margin-bottom').value) || 0
         };
-
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
         applyLanguage(appConfig.currentLang); 
@@ -727,13 +763,8 @@
             appConfig.gridCount = parsed.gridCount || 20;
             appConfig.currentLang = parsed.currentLang;
             appConfig.availableLangs = parsed.availableLangs;
-            
-            // 讀取邊界設定，若無舊資料則使用預設值
-            if(parsed.printMargins) {
-                appConfig.printMargins = parsed.printMargins;
-            } else {
-                appConfig.printMargins = { left: 0.1, right: 0, top: 0, bottom: 0 };
-            }
+            if(parsed.printMargins) { appConfig.printMargins = parsed.printMargins; } 
+            else { appConfig.printMargins = { left: 0.1, right: 0, top: 0, bottom: 0 }; }
         }
     }
 </script>
