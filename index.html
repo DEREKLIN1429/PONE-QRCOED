@@ -3,21 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>12格位 QR Code 產生與掃描系統</title>
+    <title>QR Code / Barcode 智慧系統</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f2f5; padding: 20px; text-align: center; }
+        :root {
+            --primary-color: #007bff;
+            --bg-color: #f0f2f5;
+        }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: var(--bg-color); padding: 20px; text-align: center; }
         
         /* 標題與控制區 */
-        header { margin-bottom: 20px; }
-        h2 { color: #333; margin-bottom: 10px; }
+        header { margin-bottom: 20px; position: relative; }
+        h2 { color: #333; margin-bottom: 15px; cursor: pointer; }
+
+        /* 設定按鈕 (右上角) */
+        .settings-icon {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 24px;
+            cursor: pointer;
+            background: #fff;
+            padding: 5px 10px;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
 
         /* 掃描器區域 */
-        #reader { width: 100%; max-width: 500px; margin: 0 auto; display: none; border: 5px solid #333; }
-        #ocr-status { margin: 10px 0; color: #666; font-weight: bold; }
+        #reader-container {
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto;
+            display: none;
+        }
+        #reader { width: 100%; border: 5px solid #333; cursor: pointer; }
+        .camera-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 5px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        #ocr-status { margin: 10px 0; color: #d63384; font-weight: bold; min-height: 24px;}
 
         /* 按鈕樣式 */
         .btn-group { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
@@ -34,21 +70,20 @@
         }
         .btn-scan { background-color: #007bff; }
         .btn-ocr { background-color: #ffc107; color: #333; }
+        .btn-excel { background-color: #17a2b8; }
         .btn-gen { background-color: #28a745; }
         .btn-clear { background-color: #dc3545; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        /* 格位排版：12宮格 */
+        /* 格位排版 */
         .grid-container {
             display: grid;
-            /* 根據螢幕寬度自動調整，最小寬度 200px */
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 15px;
             max-width: 1200px;
             margin: 0 auto;
         }
 
-        /* 單個卡片樣式 */
         .grid-item {
             background: white;
             padding: 15px;
@@ -60,136 +95,192 @@
             border: 1px solid #e1e1e1;
         }
 
-        .grid-label {
-            font-size: 14px;
-            color: #888;
-            margin-bottom: 5px;
-            align-self: flex-start;
-        }
-
-        /* 輸入框 */
+        .grid-label { font-size: 14px; color: #888; margin-bottom: 5px; align-self: flex-start; }
         input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box; 
-            margin-bottom: 10px;
-            font-size: 14px;
+            width: 100%; padding: 8px; border: 1px solid #ccc;
+            border-radius: 4px; box-sizing: border-box; margin-bottom: 10px;
         }
 
-        /* QR Code 顯示區 */
-        .qr-display {
-            width: 128px;
-            height: 128px;
-            background-color: #f9f9f9;
+        /* 條碼/QR 顯示區 */
+        .code-display-area {
+            width: 100%;
+            height: 140px;
+            background-color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
             margin-bottom: 10px;
-            border: 1px dashed #ddd; /* 預設虛線框 */
+            border: 1px dashed #ddd; 
+            cursor: pointer; /* 提示可點擊 */
+            overflow: hidden;
+            position: relative;
         }
-        .qr-display img {
-            max-width: 100%;
+        .code-display-area:hover { background-color: #f9f9f9; border-color: #bbb; }
+        .code-display-area img, .code-display-area svg { max-width: 95%; max-height: 95%; }
+        
+        .toggle-hint {
+            position: absolute; top: 2px; right: 2px; font-size: 10px; color: #aaa; background: rgba(255,255,255,0.8);
         }
 
-        /* QR Code 下方的文字訊息 */
         .qr-text-info {
-            font-size: 14px;
-            color: #333;
-            word-break: break-all; /* 長文字自動換行 */
-            background: #eef;
-            padding: 5px;
-            border-radius: 4px;
-            width: 100%;
-            min-height: 24px;
+            font-size: 14px; color: #333; word-break: break-all;
+            background: #eef; padding: 5px; border-radius: 4px; width: 100%;
         }
+
+        /* 設定視窗 (Modal) */
+        .modal {
+            display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888;
+            width: 90%; max-width: 400px; border-radius: 8px; text-align: left;
+        }
+        .modal-content h3 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; }
+        .modal-footer { text-align: right; margin-top: 20px; }
 
     </style>
 </head>
 <body>
 
+    <div class="settings-icon" onclick="openSettings()">⚙️ 設定</div>
+
     <header>
-        <h2>12格 QR Code 產生與掃描器</h2>
+        <h2 id="app-title">12格 QR Code 產生與掃描器</h2>
         
         <div class="btn-group">
-            <button class="btn-scan" onclick="startQRScan()">📸 掃描 QR 填入</button>
-            <button class="btn-ocr" onclick="triggerOCRFile()">📄 OCR 辨識填入</button>
-            <button class="btn-gen" onclick="generateAllQRCodes()">🔄 更新所有 QR Code</button>
+            <button class="btn-scan" onclick="startQRScan()">📸 掃描 (10秒自動停)</button>
+            <button class="btn-ocr" onclick="triggerOCRFile()">📄 圖片 OCR</button>
+            <button class="btn-excel" onclick="exportExcel()">📊 轉出 EXCEL</button>
             <button class="btn-clear" onclick="clearAll()">🗑️ 清除全部</button>
-            <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCR(this)">
+            <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
         </div>
         
         <div id="ocr-status"></div>
-        <div id="reader"></div>
+        
+        <div id="reader-container">
+            <div id="reader" title="點擊畫面進行拍照辨識"></div>
+            <div class="camera-hint">👆 點擊畫面：拍照並進行文字辨識</div>
+        </div>
     </header>
 
     <div class="grid-container" id="main-grid">
         </div>
 
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h3>系統設定</h3>
+            <div class="form-group">
+                <label>主標題名稱：</label>
+                <input type="text" id="set-title" value="12格 QR Code 產生與掃描器">
+            </div>
+            <div class="form-group">
+                <label>QR Code 格數設定：</label>
+                <input type="number" id="set-count" value="12" min="1" max="100">
+            </div>
+            <div class="form-group">
+                <label>Excel 字體大小 (僅影響顯示/備註)：</label>
+                <input type="number" id="set-font-size" value="12">
+            </div>
+            <div class="modal-footer">
+                <button onclick="saveSettings()" class="btn-gen">💾 儲存並重置</button>
+                <button onclick="closeSettings()" class="btn-clear">取消</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 1. 初始化：產生 12 個卡片介面
-        const gridContainer = document.getElementById('main-grid');
+        // --- 全域變數與設定 ---
+        let appConfig = {
+            title: "12格 QR Code 產生與掃描器",
+            gridCount: 12,
+            fontSize: 12
+        };
         
-        for (let i = 1; i <= 12; i++) {
-            // 建立卡片容器
-            let itemDiv = document.createElement('div');
-            itemDiv.className = 'grid-item';
+        let html5QrCode;
+        let scanTimeout; // 用於 10 秒自動停止
+        let codeModes = {}; // 紀錄每一格目前的模式 'qr' 或 'barcode'
 
-            // 標籤 (例如：格位 1)
-            let label = document.createElement('div');
-            label.className = 'grid-label';
-            label.innerText = '格位 ' + i;
+        // 初始化
+        window.onload = function() {
+            loadConfig();
+            initGrid();
+        };
 
-            // 輸入框
-            let input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'data-' + i;
-            input.placeholder = '輸入資料...';
-            // 當使用者手動輸入並離開輸入框時，自動更新該格的 QR
-            input.onchange = function() { generateSingleQR(i); };
+        // --- 1. 格位與介面生成 ---
+        function initGrid() {
+            const gridContainer = document.getElementById('main-grid');
+            gridContainer.innerHTML = ""; // 清空
+            document.getElementById('app-title').innerText = appConfig.title;
 
-            // QR Code 放置區
-            let qrDiv = document.createElement('div');
-            qrDiv.id = 'qrcode-' + i;
-            qrDiv.className = 'qr-display';
-            qrDiv.innerText = '(等待輸入)'; // 預設文字
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                // 預設模式為 QR
+                if (!codeModes[i]) codeModes[i] = 'qr';
 
-            // QR Code 下方文字區
-            let textDiv = document.createElement('div');
-            textDiv.id = 'text-info-' + i;
-            textDiv.className = 'qr-text-info';
+                let itemDiv = document.createElement('div');
+                itemDiv.className = 'grid-item';
 
-            // 組裝
-            itemDiv.appendChild(label);
-            itemDiv.appendChild(input);
-            itemDiv.appendChild(qrDiv);
-            itemDiv.appendChild(textDiv);
-            gridContainer.appendChild(itemDiv);
-        }
+                let label = document.createElement('div');
+                label.className = 'grid-label';
+                label.innerText = '格位 ' + i;
 
-        // 2. 核心功能：產生所有 QR Code
-        function generateAllQRCodes() {
-            for (let i = 1; i <= 12; i++) {
-                generateSingleQR(i);
+                let input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'data-' + i;
+                input.placeholder = '輸入資料...';
+                input.onkeyup = function() { generateSingleCode(i); };
+
+                // 顯示區域 (QR 或 Barcode)
+                let codeDiv = document.createElement('div');
+                codeDiv.id = 'code-container-' + i;
+                codeDiv.className = 'code-display-area';
+                codeDiv.onclick = function() { toggleCodeType(i); }; // 點擊切換功能
+                
+                // 提示文字
+                let hint = document.createElement('span');
+                hint.className = 'toggle-hint';
+                hint.innerText = '點擊切換';
+                codeDiv.appendChild(hint);
+
+                // 內容容器 (img 或 svg)
+                let imgContent = document.createElement('div');
+                imgContent.id = 'code-img-' + i;
+                codeDiv.appendChild(imgContent);
+
+                // 下方文字
+                let textDiv = document.createElement('div');
+                textDiv.id = 'text-info-' + i;
+                textDiv.className = 'qr-text-info';
+
+                itemDiv.appendChild(label);
+                itemDiv.appendChild(input);
+                itemDiv.appendChild(codeDiv);
+                itemDiv.appendChild(textDiv);
+                gridContainer.appendChild(itemDiv);
             }
         }
 
-        // 產生單一格子的 QR Code
-        function generateSingleQR(index) {
+        // --- 2. 條碼/QR 產生邏輯 ---
+        function generateSingleCode(index) {
             let inputVal = document.getElementById('data-' + index).value.trim();
-            let qrContainer = document.getElementById('qrcode-' + index);
+            let container = document.getElementById('code-img-' + index);
             let textContainer = document.getElementById('text-info-' + index);
-
-            // 清空舊的 QR
-            qrContainer.innerHTML = "";
             
-            // 更新下方文字
+            container.innerHTML = ""; // 清空
             textContainer.innerText = inputVal;
 
-            if (inputVal !== "") {
-                // 產生新的 QR Code
-                new QRCode(qrContainer, {
+            if (inputVal === "") {
+                container.innerText = "(無資料)";
+                return;
+            }
+
+            // 依據目前模式產生
+            if (codeModes[index] === 'qr') {
+                // 產生 QR Code
+                new QRCode(container, {
                     text: inputVal,
                     width: 120,
                     height: 120,
@@ -198,97 +289,213 @@
                     correctLevel : QRCode.CorrectLevel.M
                 });
             } else {
-                qrContainer.innerText = "(無資料)";
+                // 產生 Barcode
+                let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                container.appendChild(svg);
+                try {
+                    JsBarcode(svg, inputVal, {
+                        format: "CODE128",
+                        width: 2,
+                        height: 50,
+                        displayValue: false // 下方已經有文字框了，這裡不顯示
+                    });
+                } catch (e) {
+                    container.innerText = "無法產生條碼(格式錯誤)";
+                }
             }
         }
 
-        // 3. 掃描功能 (Html5Qrcode)
-        let html5QrCode;
-        
+        // 點擊切換 QR / Barcode
+        function toggleCodeType(index) {
+            let current = codeModes[index];
+            codeModes[index] = (current === 'qr') ? 'barcode' : 'qr';
+            generateSingleCode(index); // 重新產生
+        }
+
+        // --- 3. 相機與掃描邏輯 ---
         function startQRScan() {
-            const readerDiv = document.getElementById('reader');
+            const readerDiv = document.getElementById('reader-container');
             readerDiv.style.display = "block";
-            
+            document.getElementById('ocr-status').innerText = "相機已啟動 - 10秒後自動關閉";
+
             html5QrCode = new Html5Qrcode("reader");
-            
+
+            // 重置計時器
+            resetScanTimer();
+
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
                 (decodedText) => {
-                    // 掃描成功
+                    // 掃描到 QR Code
                     console.log(`Scan result: ${decodedText}`);
-                    fillDataAndGenerate(decodedText, false); // 填入並產生
+                    fillData(decodedText);
                     stopScan();
-                    alert("掃描成功！已自動填入並產生 QR Code。");
+                    alert("QR Code 掃描成功！");
                 },
-                (errorMessage) => { }
-            ).catch(err => {
-                alert("無法啟動相機，請確認權限。");
+                (errorMessage) => { 
+                    // 掃描中...不動作
+                }
+            ).then(() => {
+                // 相機啟動成功後，加入點擊事件 (針對 capture)
+                // 由於 html5-qrcode 封裝了 video，我們需要加上點擊監聽
+                setTimeout(() => {
+                    let videoElement = document.querySelector("#reader video");
+                    if(videoElement) {
+                        videoElement.onclick = function() {
+                            captureAndOCR(videoElement);
+                        };
+                    }
+                }, 1000); // 延遲一下確保 video 元素已生成
+            }).catch(err => {
+                alert("無法啟動相機：" + err);
             });
         }
 
         function stopScan() {
             if(html5QrCode) {
                 html5QrCode.stop().then(() => {
-                    document.getElementById('reader').style.display = "none";
+                    document.getElementById('reader-container').style.display = "none";
+                    clearTimeout(scanTimeout);
+                    document.getElementById('ocr-status').innerText = "";
                 }).catch(err => console.log(err));
             }
         }
 
-        // 4. 文字辨識 (OCR)
+        // 10秒自動關閉邏輯
+        function resetScanTimer() {
+            if(scanTimeout) clearTimeout(scanTimeout);
+            scanTimeout = setTimeout(() => {
+                stopScan();
+                document.getElementById('ocr-status').innerText = "💤 相機閒置超過 10 秒，已自動關閉";
+            }, 10000); // 10000 ms = 10 sec
+        }
+
+        // --- 4. 點擊畫面拍照 OCR ---
+        function captureAndOCR(video) {
+            // 視覺回饋
+            video.style.opacity = "0.5";
+            setTimeout(() => video.style.opacity = "1", 200);
+
+            // 1. 建立 Canvas 擷取畫面
+            let canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            let ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // 2. 轉為圖片並執行 OCR
+            document.getElementById('ocr-status').innerText = "⏳ 正在辨識影像文字...";
+            
+            // 停止相機 (模擬拍照完成)
+            stopScan(); 
+
+            // 執行 Tesseract
+            Tesseract.recognize(
+                canvas.toDataURL('image/png'),
+                'eng+chi_tra',
+                { logger: m => console.log(m) }
+            ).then(({ data: { text } }) => {
+                document.getElementById('ocr-status').innerText = "✅ 拍照辨識完成！";
+                let cleanedText = text.replace(/,/g, " "); 
+                fillData(cleanedText);
+            });
+        }
+
         function triggerOCRFile() {
             document.getElementById('ocr-file-input').click();
         }
 
-        function processOCR(input) {
-            const statusDiv = document.getElementById('ocr-status');
+        function processOCRFile(input) {
             if (input.files && input.files[0]) {
-                statusDiv.innerText = "⏳ 正在辨識圖片文字...";
-                
+                document.getElementById('ocr-status').innerText = "⏳ 讀取圖片中...";
                 Tesseract.recognize(
                     input.files[0],
-                    'eng+chi_tra', 
-                    { logger: m => console.log(m) }
+                    'eng+chi_tra'
                 ).then(({ data: { text } }) => {
-                    statusDiv.innerText = "✅ 辨識完成！";
-                    // 清理文字
-                    let cleanedText = text.replace(/,/g, " "); 
-                    fillDataAndGenerate(cleanedText, true);
+                    document.getElementById('ocr-status').innerText = "✅ 辨識完成";
+                    let cleanedText = text.replace(/,/g, " ");
+                    fillData(cleanedText);
                 });
             }
         }
 
-        // 5. 資料填寫與自動觸發產生
-        function fillDataAndGenerate(text, isOCR) {
-            let parts;
-            // 分割邏輯：OCR用空白切分，QR Code用逗號切分 (可依需求修改)
-            if (isOCR) {
-                parts = text.split(/\s+/).filter(item => item.length > 0);
-            } else {
-                parts = text.split(",");
-            }
-
-            // 依序填入格子
-            for (let i = 0; i < 12; i++) {
+        // --- 5. 資料填充 ---
+        function fillData(text) {
+            // 使用空白、逗號、換行切割
+            let parts = text.split(/[\s,]+/).filter(item => item.length > 0);
+            
+            for (let i = 0; i < appConfig.gridCount; i++) {
                 let inputField = document.getElementById('data-' + (i + 1));
-                if (parts[i]) {
-                    inputField.value = parts[i];
-                } else {
-                    inputField.value = ""; // 如果資料不足，清空後面的格子
+                if (inputField) {
+                    if (parts[i]) {
+                        inputField.value = parts[i];
+                    }
+                    generateSingleCode(i + 1); // 立即更新圖碼
                 }
             }
-            
-            // 重要：資料填入後，馬上觸發產生 QR Code
-            generateAllQRCodes();
+        }
+
+        // --- 6. Excel 匯出 ---
+        function exportExcel() {
+            let data = [];
+            // 表頭
+            data.push(["格位編號", "資料內容", "備註"]);
+
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                let val = document.getElementById('data-' + i).value;
+                data.push(["格位 " + i, val, ""]);
+            }
+
+            // 建立工作表
+            let ws = XLSX.utils.aoa_to_sheet(data);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "QR Data");
+
+            // 匯出
+            XLSX.writeFile(wb, "QRCode_Data.xlsx");
         }
 
         function clearAll() {
-            for (let i = 1; i <= 12; i++) {
-                document.getElementById('data-' + i).value = "";
-                document.getElementById('qrcode-' + i).innerHTML = "(等待輸入)";
-                document.getElementById('text-info-' + i).innerText = "";
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                let input = document.getElementById('data-' + i);
+                if(input) {
+                    input.value = "";
+                    generateSingleCode(i);
+                }
             }
             document.getElementById('ocr-status').innerText = "";
+        }
+
+        // --- 7. 設定功能 ---
+        function openSettings() {
+            document.getElementById('set-title').value = appConfig.title;
+            document.getElementById('set-count').value = appConfig.gridCount;
+            document.getElementById('set-font-size').value = appConfig.fontSize;
+            document.getElementById('settingsModal').style.display = "block";
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = "none";
+        }
+
+        function saveSettings() {
+            appConfig.title = document.getElementById('set-title').value;
+            let count = parseInt(document.getElementById('set-count').value);
+            if(count > 0) appConfig.gridCount = count;
+            appConfig.fontSize = document.getElementById('set-font-size').value;
+
+            // 儲存並重繪
+            localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
+            initGrid();
+            closeSettings();
+        }
+
+        function loadConfig() {
+            let saved = localStorage.getItem('qrAppConfig');
+            if (saved) {
+                appConfig = JSON.parse(saved);
+            }
         }
     </script>
 </body>
