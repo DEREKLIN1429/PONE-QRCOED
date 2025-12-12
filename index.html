@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (DEREK LIN Final)</title>
+    <title>QR Code 智慧系統 (記憶+預設值版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -25,25 +25,25 @@
         }
         .left-column { flex: 1; min-width: 300px; width: 100%; }
         
-        /* 右側面板 (電腦版) */
+        /* 右側面板 */
         .right-column {
             width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content;
         }
 
-        /* 手機版 RWD 修正：讓列印設定跑到下方 */
+        /* 手機版 RWD */
         @media (max-width: 900px) {
             .main-layout { flex-direction: column; }
             .right-column { 
                 width: 100%; 
                 box-sizing: border-box; 
                 position: static; 
-                order: 2; /* 強制排在後面 (下方) */
+                order: 2; 
             }
             .left-column { order: 1; }
         }
 
-        /* 頂部 Header 優化，避免遮擋 */
+        /* Header */
         header { 
             display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; 
             background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -118,14 +118,14 @@
         .form-group { margin-bottom: 15px; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
         
-        /* 語言管理列表 */
+        /* 語言管理 */
         .lang-manage-list { margin-top: 10px; border: 1px solid #eee; padding: 5px; max-height: 100px; overflow-y: auto; }
         .lang-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #f0f0f0; align-items: center; }
         .lang-item:last-child { border-bottom: none; }
-        .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; width: auto; height: auto; display: inline-block;}
+        .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; }
         .lang-add-group { display: flex; gap: 5px; margin-top: 10px; }
         .lang-add-group input { flex: 1; padding: 5px; font-size: 12px; }
-        .btn-sm-add { background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; width: auto; height: auto; font-size: 12px; }
+        .btn-sm-add { background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; font-size: 12px; }
 
         /* 作者署名 */
         .author-info {
@@ -185,26 +185,26 @@
         
         <div class="setting-group">
             <label data-i18n="paperSize">紙張大小 (Paper Size)</label>
-            <select id="print-size" onchange="toggleCustomSize()">
+            <select id="print-size" onchange="onPrintSettingChange()">
+                <option value="custom" data-i18n="optCustom">手動設定 (Custom)</option>
                 <option value="9">A4 (210 x 297 mm)</option>
                 <option value="1">Letter (8.5 x 11 in)</option>
                 <option value="11">A5 (148 x 210 mm)</option>
-                <option value="custom" data-i18n="optCustom">手動設定 (Custom)</option>
             </select>
             
-            <div id="custom-size-inputs" class="custom-size-group" style="display:none;">
-                <input type="number" id="custom-width" placeholder="W" value="100">
-                <input type="number" id="custom-height" placeholder="H" value="150">
-                <select id="custom-unit">
-                    <option value="mm">mm</option>
+            <div id="custom-size-inputs" class="custom-size-group">
+                <input type="number" id="custom-width" placeholder="W" onchange="onPrintSettingChange()">
+                <input type="number" id="custom-height" placeholder="H" onchange="onPrintSettingChange()">
+                <select id="custom-unit" onchange="onPrintSettingChange()">
                     <option value="in">inch</option>
+                    <option value="mm">mm</option>
                 </select>
             </div>
         </div>
 
         <div class="setting-group">
             <label data-i18n="orientation">方向 (Orientation)</label>
-            <select id="print-orientation">
+            <select id="print-orientation" onchange="onPrintSettingChange()">
                 <option value="portrait" data-i18n="optPortrait">直向 (Portrait)</option>
                 <option value="landscape" data-i18n="optLandscape">橫向 (Landscape)</option>
             </select>
@@ -212,7 +212,7 @@
 
         <div class="setting-group">
             <label data-i18n="columns">每行欄數 (Columns)</label>
-            <select id="print-cols">
+            <select id="print-cols" onchange="onPrintSettingChange()">
                 <option value="3">3</option>
                 <option value="4">4</option>
                 <option value="5">5</option>
@@ -226,24 +226,24 @@
             <div class="margin-grid">
                 <div class="margin-input-wrapper">
                     <span data-i18n="mTop">上</span>
-                    <input type="number" id="margin-top" value="10" step="1">
+                    <input type="number" id="margin-top" step="0.1" onchange="onPrintSettingChange()">
                 </div>
                 <div class="margin-input-wrapper">
                     <span data-i18n="mBottom">下</span>
-                    <input type="number" id="margin-bottom" value="10" step="1">
+                    <input type="number" id="margin-bottom" step="0.1" onchange="onPrintSettingChange()">
                 </div>
                 <div class="margin-input-wrapper">
                     <span data-i18n="mLeft">左</span>
-                    <input type="number" id="margin-left" value="10" step="1">
+                    <input type="number" id="margin-left" step="0.1" onchange="onPrintSettingChange()">
                 </div>
                 <div class="margin-input-wrapper">
                     <span data-i18n="mRight">右</span>
-                    <input type="number" id="margin-right" value="10" step="1">
+                    <input type="number" id="margin-right" step="0.1" onchange="onPrintSettingChange()">
                 </div>
             </div>
-            <select id="margin-unit" style="margin-top:5px;">
-                <option value="mm">mm</option>
+            <select id="margin-unit" style="margin-top:5px;" onchange="onPrintSettingChange()">
                 <option value="in">inch</option>
+                <option value="mm">mm</option>
             </select>
         </div>
 
@@ -267,6 +267,18 @@
         </div>
 
         <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
+            <label>預設自訂紙張尺寸 (Default Paper)：</label>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="def-paper-w" placeholder="W" step="0.01">
+                <input type="number" id="def-paper-h" placeholder="H" step="0.01">
+                <select id="def-paper-unit">
+                    <option value="in">inch</option>
+                    <option value="mm">mm</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
             <label data-i18n="lblLangManage">語言管理 (Language Manage)：</label>
             <div class="lang-manage-list" id="lang-list-container">
                 </div>
@@ -287,7 +299,7 @@
 <div class="author-info">Author: DEREK LIN</div>
 
 <script>
-    // --- 翻譯字典 (含印地文) ---
+    // --- 翻譯字典 ---
     const translations = {
         "zh-TW": {
             appTitle: "QR Code 智慧系統",
@@ -401,7 +413,15 @@
             { code: "zh-TW", name: "繁體中文" },
             { code: "en-US", name: "English" },
             { code: "hi-IN", name: "हिन्दी (Hindi)" }
-        ]
+        ],
+        // 預設自訂紙張 (設定內)
+        defaultPaper: {
+            width: 4.49,
+            height: 7.5,
+            unit: 'in'
+        },
+        // 上次使用的列印設定 (自動記憶)
+        lastPrintState: null
     };
 
     let html5QrCode;
@@ -412,11 +432,220 @@
         initLangSelect(); 
         applyLanguage(appConfig.currentLang);
         initGrid(); 
+        initPrintSettings(); // 初始化列印設定UI
+        
         document.getElementById('batch-input').addEventListener('keydown', function(event) {
             if (event.key === 'Enter') processBatchInput();
         });
     };
 
+    // --- 初始化列印設定 (讀取記憶或預設值) ---
+    function initPrintSettings() {
+        // 如果有上次記憶，就用記憶，否則用預設
+        const p = appConfig.lastPrintState || {
+            size: 'custom',
+            customW: appConfig.defaultPaper.width,
+            customH: appConfig.defaultPaper.height,
+            customUnit: appConfig.defaultPaper.unit,
+            orientation: 'portrait',
+            cols: 3,
+            margins: { t:0, b:0, l:0, r:0, unit:'in' } // 邊界預設 0
+        };
+
+        document.getElementById('print-size').value = p.size;
+        document.getElementById('print-orientation').value = p.orientation;
+        document.getElementById('print-cols').value = p.cols;
+
+        // Custom inputs
+        document.getElementById('custom-width').value = p.customW || appConfig.defaultPaper.width;
+        document.getElementById('custom-height').value = p.customH || appConfig.defaultPaper.height;
+        document.getElementById('custom-unit').value = p.customUnit || appConfig.defaultPaper.unit;
+        
+        // Margins
+        document.getElementById('margin-top').value = p.margins.t;
+        document.getElementById('margin-bottom').value = p.margins.b;
+        document.getElementById('margin-left').value = p.margins.l;
+        document.getElementById('margin-right').value = p.margins.r;
+        document.getElementById('margin-unit').value = p.margins.unit;
+
+        toggleCustomSize(); // 顯示或隱藏手動輸入框
+    }
+
+    // --- 當列印設定變更時，自動儲存 ---
+    function onPrintSettingChange() {
+        const state = {
+            size: document.getElementById('print-size').value,
+            customW: document.getElementById('custom-width').value,
+            customH: document.getElementById('custom-height').value,
+            customUnit: document.getElementById('custom-unit').value,
+            orientation: document.getElementById('print-orientation').value,
+            cols: document.getElementById('print-cols').value,
+            margins: {
+                t: document.getElementById('margin-top').value,
+                b: document.getElementById('margin-bottom').value,
+                l: document.getElementById('margin-left').value,
+                r: document.getElementById('margin-right').value,
+                unit: document.getElementById('margin-unit').value
+            }
+        };
+        appConfig.lastPrintState = state;
+        saveSettingsDirectly(); // 存入 localStorage
+        toggleCustomSize();
+    }
+
+    function toggleCustomSize() {
+        const size = document.getElementById('print-size').value;
+        const customInputs = document.getElementById('custom-size-inputs');
+        if (size === 'custom') {
+            customInputs.style.display = 'flex';
+        } else {
+            customInputs.style.display = 'none';
+        }
+    }
+
+    // --- Excel 匯出 (修復存檔 + 間隔) ---
+    async function exportExcelWithImages() {
+        const t = translations[appConfig.currentLang] || translations["en-US"];
+        let hasData = false;
+        for(let i=1; i<=appConfig.gridCount; i++){ if(document.getElementById('data-'+i).value.trim() !== "") hasData = true; }
+        if(!hasData) { alert(t.alertEmpty); return; }
+
+        const statusDiv = document.getElementById('ocr-status');
+        statusDiv.innerText = t.statusExcel;
+
+        // 讀取 UI 設定
+        const printSizeVal = document.getElementById('print-size').value;
+        const printOrientation = document.getElementById('print-orientation').value;
+        const printCols = parseInt(document.getElementById('print-cols').value);
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('QR Codes');
+
+        let paperSizeId = undefined;
+        if(printSizeVal !== 'custom') paperSizeId = parseInt(printSizeVal);
+        
+        // 設定 Page Setup
+        worksheet.pageSetup = {
+            paperSize: paperSizeId, 
+            orientation: printOrientation,
+            fitToPage: false,
+        };
+
+        // 設定邊界
+        const marginUnit = document.getElementById('margin-unit').value;
+        const mTop = parseFloat(document.getElementById('margin-top').value) || 0;
+        const mBot = parseFloat(document.getElementById('margin-bottom').value) || 0;
+        const mLeft = parseFloat(document.getElementById('margin-left').value) || 0;
+        const mRight = parseFloat(document.getElementById('margin-right').value) || 0;
+
+        const toInches = (val) => (marginUnit === 'mm') ? val / 25.4 : val;
+
+        worksheet.pageSetup.margins = {
+            top: toInches(mTop),
+            bottom: toInches(mBot),
+            left: toInches(mLeft),
+            right: toInches(mRight),
+            header: 0, footer: 0 
+        };
+
+        // 欄寬計算
+        let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
+        if(printSizeVal === 'custom') {
+             let rawW = parseFloat(document.getElementById('custom-width').value) || 4.49;
+             let cUnit = document.getElementById('custom-unit').value;
+             let wMm = (cUnit === 'in') ? rawW * 25.4 : rawW;
+             
+             if(printOrientation === 'landscape') { 
+                 let rawH = parseFloat(document.getElementById('custom-height').value) || 7.5;
+                 let hMm = (cUnit === 'in') ? rawH * 25.4 : rawH;
+                 wMm = hMm;
+             }
+             // 粗略換算: 210mm ~ 85 Excel units
+             totalWidthUnits = wMm * (85 / 210);
+        }
+
+        // 計算每欄寬度
+        // 需要扣除間隔欄的寬度 (間隔欄固定 0.5)
+        // 總空間 = (printCols * colWidth) + ((printCols-1) * 0.5)
+        // colWidth = (Total - (cols-1)*0.5) / cols
+        let spacerWidth = 0.5;
+        let availableWidth = totalWidthUnits - ((printCols - 1) * spacerWidth);
+        let mainColWidth = availableWidth / printCols;
+        if(mainColWidth < 1) mainColWidth = 10; // 防呆
+
+        let colsConfig = [];
+        for(let k=0; k<printCols; k++) { 
+            colsConfig.push({ width: mainColWidth }); 
+            if (k < printCols - 1) {
+                colsConfig.push({ width: spacerWidth }); // 間隔欄
+            }
+        }
+        worksheet.columns = colsConfig;
+
+        let validItemIndex = 0; 
+        const IMG_H = 100;
+        const TXT_H = 30;
+        const ROW_SPACER_H = 9; // 列間隔
+
+        for (let i = 1; i <= appConfig.gridCount; i++) {
+            let val = document.getElementById('data-' + i).value.trim();
+            if (val !== "") {
+                let colGridIndex = validItemIndex % printCols; 
+                let rowGridIndex = Math.floor(validItemIndex / printCols);
+
+                // Excel Column Index (0-based for JS array, add 1 for cell access)
+                let excelColIndex = colGridIndex * 2; 
+
+                // Row Numbers
+                let imgRowNumber = 1 + (rowGridIndex * 3); 
+                let textRowNumber = imgRowNumber + 1;
+                let spacerRowNumber = imgRowNumber + 2;
+
+                worksheet.getRow(imgRowNumber).height = IMG_H;
+                worksheet.getRow(textRowNumber).height = TXT_H;
+                worksheet.getRow(spacerRowNumber).height = ROW_SPACER_H;
+
+                let containerDiv = document.getElementById('code-img-' + i);
+                let canvasObj = containerDiv.querySelector('canvas');
+                let imgObj = containerDiv.querySelector('img');
+                let base64Image = null;
+                if (canvasObj) base64Image = canvasObj.toDataURL('image/png');
+                else if (imgObj && imgObj.src) base64Image = imgObj.src;
+
+                if (base64Image) {
+                    const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
+                    worksheet.addImage(imageId, {
+                        tl: { col: excelColIndex, row: imgRowNumber - 1 },
+                        br: { col: excelColIndex + 1, row: imgRowNumber }, 
+                        editAs: 'oneCell' 
+                    });
+                } else {
+                    let cell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
+                    cell.value = "(No Image)";
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                }
+
+                let textCell = worksheet.getCell(textRowNumber, excelColIndex + 1);
+                textCell.value = val;
+                textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                textCell.font = { size: 12, bold: true };
+
+                let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
+                imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+                textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+
+                validItemIndex++;
+            }
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        saveAs(blob, "QRCode_Print.xlsx");
+        
+        statusDiv.innerText = t.statusExcelDone;
+    }
+
+    // --- 標準功能 ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -555,156 +784,7 @@
         }
     }
 
-    function toggleCustomSize() {
-        const size = document.getElementById('print-size').value;
-        const customInputs = document.getElementById('custom-size-inputs');
-        if (size === 'custom') customInputs.style.display = 'flex'; else customInputs.style.display = 'none';
-    }
-
-    // --- Excel 匯出 (含間隔) ---
-    async function exportExcelWithImages() {
-        const t = translations[appConfig.currentLang] || translations["en-US"];
-        let hasData = false;
-        for(let i=1; i<=appConfig.gridCount; i++){ if(document.getElementById('data-'+i).value.trim() !== "") hasData = true; }
-        if(!hasData) { alert(t.alertEmpty); return; }
-
-        const statusDiv = document.getElementById('ocr-status');
-        statusDiv.innerText = t.statusExcel;
-
-        const printSizeVal = document.getElementById('print-size').value;
-        const printOrientation = document.getElementById('print-orientation').value;
-        const printCols = parseInt(document.getElementById('print-cols').value);
-        const printMargins = document.getElementById('print-margins').value;
-
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('QR Codes');
-
-        let paperSizeId = undefined;
-        if(printSizeVal !== 'custom') paperSizeId = parseInt(printSizeVal);
-        
-        // 設定 Page Setup
-        worksheet.pageSetup = {
-            paperSize: paperSizeId, 
-            orientation: printOrientation,
-            fitToPage: false,
-        };
-
-        const marginUnit = document.getElementById('margin-unit').value;
-        const marginTop = parseFloat(document.getElementById('margin-top').value) || 0;
-        const marginBottom = parseFloat(document.getElementById('margin-bottom').value) || 0;
-        const marginLeft = parseFloat(document.getElementById('margin-left').value) || 0;
-        const marginRight = parseFloat(document.getElementById('margin-right').value) || 0;
-
-        const convertToInches = (val) => { return (marginUnit === 'mm') ? val / 25.4 : val; };
-
-        worksheet.pageSetup.margins = {
-            top: convertToInches(marginTop),
-            bottom: convertToInches(marginBottom),
-            left: convertToInches(marginLeft),
-            right: convertToInches(marginRight),
-            header: 0, footer: 0 
-        };
-
-        // 欄寬計算
-        let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
-        if(printSizeVal === 'custom') {
-             let rawW = parseFloat(document.getElementById('custom-width').value) || 100;
-             let unit = document.getElementById('custom-unit').value;
-             let widthMm = (unit === 'in') ? rawW * 25.4 : rawW;
-             if(printOrientation === 'landscape') { 
-                 let rawH = parseFloat(document.getElementById('custom-height').value) || 150;
-                 let heightMm = (unit === 'in') ? rawH * 25.4 : rawH;
-                 widthMm = heightMm;
-             }
-             totalWidthUnits = widthMm * (85 / 210);
-        }
-
-        let mainColWidth = Math.floor(totalWidthUnits / printCols);
-        
-        // --- 設定欄位 (含間隔欄) ---
-        // 欄位順序: Data, Spacer, Data, Spacer...
-        // 總欄數 = printCols + (printCols-1)
-        let colsConfig = [];
-        for(let k=0; k<printCols; k++) { 
-            colsConfig.push({ width: mainColWidth }); // 資料欄
-            if (k < printCols - 1) {
-                colsConfig.push({ width: 0.5 }); // 間隔欄 (寬度 0.5)
-            }
-        }
-        worksheet.columns = colsConfig;
-
-        let validItemIndex = 0; 
-        // 圖片列高度 100, 文字列高度 30, 間隔列高度 9
-        const IMG_H = 100;
-        const TXT_H = 30;
-        const SPACE_H = 9;
-
-        for (let i = 1; i <= appConfig.gridCount; i++) {
-            let val = document.getElementById('data-' + i).value.trim();
-            if (val !== "") {
-                // 計算在網格中的位置 (x, y)
-                let colGridIndex = validItemIndex % printCols; 
-                let rowGridIndex = Math.floor(validItemIndex / printCols);
-
-                // 換算成 Excel 座標
-                // Column: 每個資料佔2欄(本身+間隔)，除了最後一個。所以 index = colGridIndex * 2
-                // 但是 ExcelJS 是 1-based columns 存取，陣列是 0-based。
-                // 這裡 colIndex 代表的是 colsConfig 陣列的 index
-                let excelColIndex = colGridIndex * 2; 
-
-                // Row: 每組資料佔3列(圖+文+間隔)。
-                // Group 0: Row 1(Img), Row 2(Txt), Row 3(Space)
-                // Group 1: Row 4(Img), Row 5(Txt), Row 6(Space)
-                let imgRowNumber = 1 + (rowGridIndex * 3); 
-                let textRowNumber = imgRowNumber + 1;
-                let spaceRowNumber = imgRowNumber + 2;
-
-                // 設定高度
-                worksheet.getRow(imgRowNumber).height = IMG_H;
-                worksheet.getRow(textRowNumber).height = TXT_H;
-                worksheet.getRow(spaceRowNumber).height = SPACE_H; // 間隔列
-
-                let containerDiv = document.getElementById('code-img-' + i);
-                let canvasObj = containerDiv.querySelector('canvas');
-                let imgObj = containerDiv.querySelector('img');
-                let base64Image = null;
-                if (canvasObj) base64Image = canvasObj.toDataURL('image/png');
-                else if (imgObj && imgObj.src) base64Image = imgObj.src;
-
-                if (base64Image) {
-                    const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
-                    worksheet.addImage(imageId, {
-                        tl: { col: excelColIndex, row: imgRowNumber - 1 },
-                        br: { col: excelColIndex + 1, row: imgRowNumber }, 
-                        editAs: 'oneCell' 
-                    });
-                } else {
-                    let cell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
-                    cell.value = "(No Image)";
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                }
-
-                let textCell = worksheet.getCell(textRowNumber, excelColIndex + 1);
-                textCell.value = val;
-                textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-                textCell.font = { size: 12, bold: true };
-
-                let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
-                imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
-                textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
-
-                validItemIndex++;
-            }
-        }
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_Full.xlsx");
-        
-        statusDiv.innerText = t.statusExcelDone;
-    }
-
-    // --- 相機與OCR相關 ---
+    // --- 相機 ---
     function startQRScan() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         const wrapper = document.getElementById('camera-wrapper');
@@ -721,19 +801,8 @@
             }, 1000);
         }).catch(err => { alert("Cam Error:" + err); wrapper.style.display = "none"; });
     }
-
-    function stopScan() {
-        if(html5QrCode) {
-            html5QrCode.stop().then(() => {
-                document.getElementById('camera-wrapper').style.display = "none";
-                clearTimeout(scanTimeout);
-            }).catch(err => console.log(err));
-        }
-    }
-    function resetScanTimer() {
-        if(scanTimeout) clearTimeout(scanTimeout);
-        scanTimeout = setTimeout(() => { stopScan(); document.getElementById('ocr-status').innerText = ""; }, 10000);
-    }
+    function stopScan() { if(html5QrCode) { html5QrCode.stop().then(() => { document.getElementById('camera-wrapper').style.display = "none"; clearTimeout(scanTimeout); }).catch(err => console.log(err)); } }
+    function resetScanTimer() { if(scanTimeout) clearTimeout(scanTimeout); scanTimeout = setTimeout(() => { stopScan(); document.getElementById('ocr-status').innerText = ""; }, 10000); }
     function captureAndOCR(video) {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let canvas = document.createElement("canvas");
@@ -767,6 +836,11 @@
     function openSettings() {
         document.getElementById('set-title').value = appConfig.title;
         document.getElementById('set-count').value = appConfig.gridCount;
+        // 預設紙張
+        document.getElementById('def-paper-w').value = appConfig.defaultPaper.width;
+        document.getElementById('def-paper-h').value = appConfig.defaultPaper.height;
+        document.getElementById('def-paper-unit').value = appConfig.defaultPaper.unit;
+        
         updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
@@ -775,20 +849,25 @@
     function saveSettings() {
         appConfig.title = document.getElementById('set-title').value;
         appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 12;
+        
+        // 儲存預設紙張
+        appConfig.defaultPaper.width = parseFloat(document.getElementById('def-paper-w').value) || 4.49;
+        appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 7.5;
+        appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
+
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
         applyLanguage(appConfig.currentLang); 
         closeSettings();
     }
-    function saveSettingsDirectly() {
-        localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
-    }
+    function saveSettingsDirectly() { localStorage.setItem('qrAppConfig', JSON.stringify(appConfig)); }
     function loadConfig() {
         let saved = localStorage.getItem('qrAppConfig');
         if (saved) {
             let parsed = JSON.parse(saved);
             if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
+            if(!parsed.defaultPaper) parsed.defaultPaper = { width: 4.49, height: 7.5, unit: 'in' };
             appConfig = parsed;
         }
     }
