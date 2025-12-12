@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (無格線版)</title>
+    <title>QR Code 智慧系統 (DEREK LIN Final Excel V2)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -306,7 +306,7 @@
             <div style="display:flex; gap:5px; align-items:center;">
                 <div style="flex:1;">
                     <label style="font-size:12px;">欄間隔 (Width)</label>
-                    <input type="number" id="def-spacer-w" placeholder="1" step="0.1">
+                    <input type="number" id="def-spacer-w" placeholder="9.20" step="0.1">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:12px;">列間隔 (Height)</label>
@@ -314,7 +314,7 @@
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:12px;">字體大小 (Font)</label>
-                    <input type="number" id="def-font-size" placeholder="6" step="1">
+                    <input type="number" id="def-font-size" placeholder="5" step="1">
                 </div>
             </div>
         </div>
@@ -394,8 +394,8 @@
         title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
         defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, // 4x6 inch
-        excelSpacer: { colWidth: 1, rowHeight: 10 }, 
-        excelFontSize: 6,
+        excelSpacer: { colWidth: 9.20, rowHeight: 10 }, // 預設間隔 (欄寬 9.20)
+        excelFontSize: 5, // 預設字體 5
         lastPrintState: null
     };
 
@@ -484,7 +484,7 @@
         
         worksheet.pageSetup = { paperSize: paperSizeId, orientation: printOrientation, fitToPage: false };
         
-        // ** 修正：Excel 匯出無格線 **
+        // 修正：隱藏格線
         worksheet.views = [{ showGridLines: false }];
 
         const marginUnit = document.getElementById('margin-unit').value;
@@ -513,7 +513,8 @@
              totalWidthUnits = wCm * (85 / 21);
         }
 
-        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
+        // 間隔設定
+        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 9.20;
         let mainColWidth = (totalWidthUnits - (printCols * spacerW)) / printCols;
         if(mainColWidth < 1) mainColWidth = 10; 
 
@@ -529,10 +530,10 @@
 
         let validItemIndex = 0; 
         const IMG_H = 100;
-        const TXT_H = 15; 
+        const TXT_H = 5.25; 
         const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 10; 
         
-        // 修正：1.8cm 圖片尺寸 (1.8/2.54 * 96dpi ~ 68px)
+        // 1.8cm * 1.8cm = ~68 pixels
         const QR_PIXELS = 68;
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -576,9 +577,9 @@
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                 textCell.font = { size: appConfig.excelFontSize, bold: true };
 
-                let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
-                imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
-                textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
+                // 移除邊框
+                // let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
+                // imgCell.border = null;
 
                 validItemIndex++;
             }
@@ -590,10 +591,7 @@
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- Other functions omitted for brevity (same as previous) ---
-    // (Ensure to include all other functions like initLangSelect, changeLanguage, applyLanguage, updateLangManageList, addNewLanguage, removeLanguage, initGrid, generateSingleCode, processBatchInput, fillData, startQRScan, stopScan, resetScanTimer, captureAndOCR, triggerOCRFile, processOCRFile, clearAll, openSettings, closeSettings, saveSettings, saveSettingsDirectly, loadConfig)
-    
-    // ... [Previous Helper Functions] ...
+    // --- Other Functions ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -780,9 +778,10 @@
         appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 15.24;
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
 
-        appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 1;
+        // 儲存間隔設定 (修正預設值)
+        appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 9.20;
         appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 10;
-        appConfig.excelFontSize = parseFloat(document.getElementById('def-font-size').value) || 6;
+        appConfig.excelFontSize = parseFloat(document.getElementById('def-font-size').value) || 5;
 
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
@@ -797,8 +796,8 @@
             if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
             if(!parsed.defaultPaper) parsed.defaultPaper = { width: 10.16, height: 15.24, unit: 'cm' };
-            if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 1, rowHeight: 10 };
-            if(!parsed.excelFontSize) parsed.excelFontSize = 6;
+            if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 9.20, rowHeight: 10 };
+            if(!parsed.excelFontSize) parsed.excelFontSize = 5;
             appConfig = parsed;
         }
     }
