@@ -43,6 +43,16 @@
         #scan-overlay::after { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; height: 2px; background: #00ff00; box-shadow: 0 0 4px #00ff00; animation: scanning 2s infinite ease-in-out; }
         @keyframes scanning { 0% { top: 10px; opacity: 0; } 50% { opacity: 1; } 100% { top: 230px; opacity: 0; } }
         .camera-hint { position: absolute; bottom: 10px; left: 0; right: 0; color: white; text-align: center; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 20; pointer-events: none; font-size: 14px; }
+        
+        /* OCR Capture Button */
+        #btn-capture-ocr {
+            display: none; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 30; width: 60px; height: 60px; border-radius: 50%;
+            background: #ff4444; border: 4px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            cursor: pointer; transition: transform 0.1s;
+        }
+        #btn-capture-ocr:active { transform: translateX(-50%) scale(0.9); }
+
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
         .btn-group { display: grid; gap: 10px; width: 100%; margin: 0 0 10px 0; grid-template-columns: 1fr 1fr; }
@@ -85,7 +95,7 @@
 
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; max-height: 90vh; overflow-y: auto; }
-        .modal-footer { text-align: right; margin-top: 20px; }
+        .modal-footer { text-align: right; margin-top: 20px; display: flex; justify-content: space-between; align-items: center;}
         .form-group { margin-bottom: 15px; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
         
@@ -117,6 +127,7 @@
             <div id="camera-wrapper">
                 <div id="scan-overlay"></div>
                 <div id="reader"></div>
+                <button id="btn-capture-ocr" onclick="triggerCapture()" title="Capture Text"></button>
                 <div id="cam-hint-text" class="camera-hint" data-i18n="camHint"></div>
             </div>
             <div id="ocr-status"></div>
@@ -206,8 +217,11 @@
             <div class="lang-add-group"><input type="text" id="new-lang-code" placeholder="Code"><input type="text" id="new-lang-name" placeholder="Name"><button class="btn-sm-add" onclick="addNewLanguage()">Add</button></div>
         </div>
         <div class="modal-footer">
-            <button onclick="saveSettings()" style="background-color:#28a745;color:white;padding:8px;border:none;border-radius:4px;" data-i18n="btnSave">儲存</button>
-            <button onclick="closeSettings()" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px;" data-i18n="btnCancel">取消</button>
+            <button onclick="resetSettings()" style="background-color:#dc3545; color:white; padding:8px; border:none; border-radius:4px; font-size:12px;">⚠️ 恢復原廠設定</button>
+            <div style="display:flex; gap: 10px;">
+                <button onclick="saveSettings()" style="background-color:#28a745;color:white;padding:8px;border:none;border-radius:4px; width:auto;" data-i18n="btnSave">儲存</button>
+                <button onclick="closeSettings()" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px; width:auto;" data-i18n="btnCancel">取消</button>
+            </div>
         </div>
     </div>
 </div>
@@ -219,7 +233,7 @@
         "zh-TW": {
             appTitle: "QR Code 智慧系統",
             camHint: "掃描中... 成功後自動填入",
-            ocrHint: "點擊畫面進行拍照辨識",
+            ocrHint: "請將文字對準，並點擊下方紅色按鈕",
             btnScan: "連續掃描", btnOcr: "文字照相辨識", btnClear: "清除全部", btnExcel: "依設定轉出 EXCEL",
             btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料 (Enter 可確定)...",
             printSettings: "🖨️ Excel 列印設定", paperSize: "紙張大小 (Paper Size)",
@@ -236,7 +250,7 @@
         "en-US": {
             appTitle: "Smart QR Code System",
             camHint: "Scanning... Auto-fills on success",
-            ocrHint: "Tap screen to capture & OCR",
+            ocrHint: "Align text and tap the red button below",
             btnScan: "Cont. Scan", btnOcr: "Camera OCR", btnClear: "Clear All", btnExcel: "Export Excel",
             btnAdd: "⬇️ Add", batchPlace: "Quick input (Press Enter)...",
             printSettings: "🖨️ Excel Print Settings", paperSize: "Paper Size",
@@ -252,7 +266,7 @@
         },
         "hi-IN": {
             appTitle: "QR कोड स्मार्ट सिस्टम", camHint: "स्कैनिंग... सफल होने पर ऑटो-भरें",
-            ocrHint: "फोटो और OCR के लिए स्क्रीन टैप करें",
+            ocrHint: "टेक्स्ट संरेखित करें और लाल बटन दबाएं",
             btnScan: "निरंतर स्कैन", btnOcr: "कैमरा OCR", btnClear: "सभी साफ़ करें", btnExcel: "एक्सेल निर्यात करें",
             btnAdd: "⬇️ जोड़ें", batchPlace: "डेटा दर्ज करें (Enter दबाएं)...",
             printSettings: "🖨️ प्रिंट सेटिंग्स", paperSize: "कागज का आकार",
@@ -273,7 +287,7 @@
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
         defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, 
         excelSpacer: { colWidth: 1, rowHeight: 10 }, 
-        excelFontSize: 6, // 修正文字大小 6
+        excelFontSize: 6,
         excelQrSize: { col: 20, row: 100 }, 
         lastPrintState: null
     };
@@ -283,6 +297,18 @@
     let currentMode = null; 
     let lastScannedText = "";
     let lastScanTime = 0;
+
+    // Debounce function to optimize input performance
+    function debounce(func, delay) {
+        let timeoutId;
+        return function (...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                func.apply(this, args);
+            }, delay);
+        };
+    }
+    const debouncedGenerate = debounce((index) => generateSingleCode(index), 300);
 
     window.onload = function() { 
         loadConfig(); initLangSelect(); applyLanguage(appConfig.currentLang);
@@ -296,18 +322,21 @@
         const overlay = document.getElementById('scan-overlay');
         const hint = document.getElementById('cam-hint-text');
         const status = document.getElementById('ocr-status');
+        const captureBtn = document.getElementById('btn-capture-ocr');
         
         wrapper.style.display = "block";
         currentMode = mode;
         
         if (mode === 'qr') {
             overlay.style.display = "block";
+            captureBtn.style.display = "none";
             hint.innerText = t.camHint;
             status.innerText = t.statusCam;
         } else {
             overlay.style.display = "none";
+            captureBtn.style.display = "block";
             hint.innerText = t.ocrHint;
-            status.innerText = "Camera Active - Tap to Capture";
+            status.innerText = "Camera Active - Tap Red Button";
         }
 
         if (html5QrCode) { stopScan().then(() => initHtml5QrCode(mode)); } else { initHtml5QrCode(mode); }
@@ -329,12 +358,7 @@
                 }
             },
             (errorMessage) => {}
-        ).then(() => {
-            if (mode === 'ocr') {
-                let videoElement = document.querySelector("#reader video");
-                if(videoElement) { videoElement.onclick = function() { captureAndOCR(videoElement); }; }
-            }
-        }).catch(err => {
+        ).catch(err => {
             alert("Camera Error: " + err);
             document.getElementById('camera-wrapper').style.display = "none";
         });
@@ -349,6 +373,13 @@
             }).catch(err => console.log(err));
         }
         return Promise.resolve();
+    }
+
+    function triggerCapture() {
+        let videoElement = document.querySelector("#reader video");
+        if (videoElement) {
+            captureAndOCR(videoElement);
+        }
     }
 
     function captureAndOCR(video) {
@@ -385,7 +416,7 @@
 
     function initPrintSettings() {
         const p = appConfig.lastPrintState || {
-            size: 'id_card', // 預設改為 ID CARD
+            size: 'id_card', 
             customW: appConfig.defaultPaper.width,
             customH: appConfig.defaultPaper.height,
             customUnit: appConfig.defaultPaper.unit,
@@ -454,6 +485,7 @@
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('QR Codes');
 
+        // --- 紙張設定 ---
         let paperSizeId = undefined;
         if(printSizeVal !== 'custom' && printSizeVal !== 'id_card') paperSizeId = parseInt(printSizeVal);
         
@@ -471,21 +503,7 @@
             header: 0, footer: 0 
         };
 
-        let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
-        if(printSizeVal === 'custom' || printSizeVal === 'id_card') {
-             let wCm, hCm;
-             if(printSizeVal === 'id_card') { wCm = 10.16; hCm = 15.24; } 
-             else {
-                 let rawW = parseFloat(document.getElementById('custom-width').value) || 10.16;
-                 let cUnit = document.getElementById('custom-unit').value;
-                 wCm = (cUnit==='in') ? rawW*2.54 : (cUnit==='mm' ? rawW/10 : rawW);
-                 let rawH = parseFloat(document.getElementById('custom-height').value) || 15.24;
-                 let hCmRaw = (cUnit==='in') ? rawH*2.54 : (cUnit==='mm' ? rawH/10 : rawH);
-                 if(printOrientation === 'landscape') { let temp = wCm; wCm = hCmRaw; hCm = temp; }
-             }
-             totalWidthUnits = wCm * (85 / 21);
-        }
-
+        // --- 欄寬與列高設定 ---
         let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
         let mainColWidth = parseFloat(appConfig.excelQrSize.col) || 20;
 
@@ -496,16 +514,30 @@
         }
         worksheet.columns = colsConfig;
 
-        let topSpacerH = parseFloat(appConfig.excelSpacer.rowHeight) || 10;
-        worksheet.getRow(1).height = topSpacerH;
-
-        let validItemIndex = 0; 
-        const IMG_H = parseFloat(appConfig.excelQrSize.row) || 100;
-        const TXT_H = 12; 
+        // --- 圖片與格位參數 ---
+        const IMG_H = parseFloat(appConfig.excelQrSize.row) || 100; // Excel 列高 (points)
+        const TXT_H = 15; // 文字列高
         const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 10; 
         
-        // 1.8cm * 1.8cm (96 DPI) -> 68px
-        const QR_PIXELS = 68;
+        // QR Code 圖片在 Excel 內的目標顯示尺寸 (像素) - 約 2cm
+        const QR_TARGET_SIZE = 75; 
+
+        // --- 置中計算核心 (修正版) ---
+        // Excel 寬度單位轉像素 (通用公式: (Width - 1) * 7.5 + 12)
+        const cellPxW = Math.floor((mainColWidth - 1) * 7.5 + 12); 
+        
+        // Excel 高度單位 (Points) 轉像素 (1 pt = 1.333 px)
+        const cellPxH = Math.floor(IMG_H * 1.333);
+
+        // 計算偏移量 (EMU 單位, 1px = 9525 EMUs)
+        const emuPerPx = 9525;
+        const offX_Px = Math.max(0, (cellPxW - QR_TARGET_SIZE) / 2);
+        const offY_Px = Math.max(0, (cellPxH - QR_TARGET_SIZE) / 2);
+
+        const offX_EMU = Math.floor(offX_Px * emuPerPx);
+        const offY_EMU = Math.floor(offY_Px * emuPerPx);
+
+        let validItemIndex = 0; 
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
@@ -518,10 +550,12 @@
                 let textRowNumber = imgRowNumber + 1;
                 let spacerRowNumber = imgRowNumber + 2;
 
+                // 設定高度
                 worksheet.getRow(imgRowNumber).height = IMG_H;
                 worksheet.getRow(textRowNumber).height = TXT_H;
                 worksheet.getRow(spacerRowNumber).height = ROW_SPACER_H;
 
+                // 取得圖片
                 let containerDiv = document.getElementById('code-img-' + i);
                 let canvasObj = containerDiv.querySelector('canvas');
                 let imgObj = containerDiv.querySelector('img');
@@ -532,18 +566,9 @@
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     
-                    // --- Center Calculation (Updated) ---
-                    // Column Width Unit ~ 7.12px
-                    // Row Height Unit ~ 1.33px
-                    let cellPxW = mainColWidth * 7.12; 
-                    let cellPxH = IMG_H * 1.33;
-                    
-                    let offX = Math.max(0, (cellPxW - QR_PIXELS) / 2) * 9525; // to EMUs
-                    let offY = Math.max(0, (cellPxH - QR_PIXELS) / 2) * 9525;
-
                     worksheet.addImage(imageId, {
-                        tl: { col: excelColIndex, row: imgRowNumber - 1, nativeColOff: offX, nativeRowOff: offY },
-                        ext: { width: QR_PIXELS, height: QR_PIXELS },
+                        tl: { col: excelColIndex, row: imgRowNumber - 1, nativeColOff: offX_EMU, nativeRowOff: offY_EMU },
+                        ext: { width: QR_TARGET_SIZE, height: QR_TARGET_SIZE }, 
                         editAs: 'oneCell' 
                     });
                 } else {
@@ -552,15 +577,16 @@
                     cell.alignment = { vertical: 'middle', horizontal: 'center' };
                 }
 
+                // 設定文字
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex + 1);
                 textCell.value = val;
-                textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-                textCell.font = { size: appConfig.excelFontSize, bold: true };
+                textCell.alignment = { vertical: 'top', horizontal: 'center', wrapText: true }; 
+                textCell.font = { size: appConfig.excelFontSize, bold: true, name: 'Arial' };
 
-                let borderStyle = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                // 設定框線 (圖片格下方不畫線，文字格上方不畫線)
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
-                imgCell.border = borderStyle;
-                textCell.border = borderStyle;
+                imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'none'}, right: {style:'thin'} }; 
+                textCell.border = { top: {style:'none'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; 
 
                 validItemIndex++;
             }
@@ -568,11 +594,11 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_Result.xlsx");
+        saveAs(blob, "QRCode_ID_Card.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- Standard Functions (Omitted repetitive ones, kept essential) ---
+    // --- Standard Functions ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -637,7 +663,8 @@
             let input = document.createElement('input');
             input.type = 'text'; input.className = 'grid-input'; input.id = 'data-' + i;
             input.placeholder = t.gridPlace || "Waiting...";
-            input.onkeyup = function() { generateSingleCode(i); };
+            // Apply debounce here
+            input.onkeyup = function() { debouncedGenerate(i); };
             let codeDiv = document.createElement('div');
             codeDiv.id = 'code-container-' + i; codeDiv.className = 'code-display-area';
             let imgContent = document.createElement('div');
@@ -717,6 +744,14 @@
         applyLanguage(appConfig.currentLang); 
         closeSettings();
     }
+    
+    function resetSettings() {
+        if (confirm("⚠️ 警告：確定要恢復原廠設定嗎？\n\n這將會清除您目前所有的：\n1. 自訂紙張設定\n2. 語言偏好\n3. 格子數量設定\n\n按下「確定」後頁面將會重新整理。")) {
+            localStorage.removeItem('qrAppConfig'); 
+            location.reload(); 
+        }
+    }
+
     function saveSettingsDirectly() { localStorage.setItem('qrAppConfig', JSON.stringify(appConfig)); }
     function loadConfig() {
         let saved = localStorage.getItem('qrAppConfig');
@@ -729,17 +764,6 @@
             if(!parsed.excelFontSize) parsed.excelFontSize = 6;
             if(!parsed.excelQrSize) parsed.excelQrSize = { col: 20, row: 100 };
             appConfig = parsed;
-        }
-    }
-    function triggerOCRFile() { document.getElementById('ocr-file-input').click(); }
-    function processOCRFile(input) {
-        const t = translations[appConfig.currentLang] || translations["en-US"];
-        if (input.files && input.files[0]) {
-            document.getElementById('ocr-status').innerText = t.statusOCR;
-            Tesseract.recognize(input.files[0], 'eng+chi_tra').then(({ data: { text } }) => {
-                document.getElementById('ocr-status').innerText = t.statusDone;
-                fillData(text.replace(/,/g, " "));
-            });
         }
     }
 </script>
