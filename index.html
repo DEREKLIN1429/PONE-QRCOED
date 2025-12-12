@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (置中修正版)</title>
+    <title>QR Code 智慧系統 (精準置中修復版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -190,7 +190,7 @@
             <label>Excel 間隔 & 字體設定：</label>
             <div style="display:flex; gap:5px; align-items:center;">
                 <div style="flex:1;"><label style="font-size:12px;">欄間隔 (Width)</label><input type="number" id="def-spacer-w" placeholder="1" step="0.1"></div>
-                <div style="flex:1;"><label style="font-size:12px;">列間隔 (Height)</label><input type="number" id="def-spacer-h" placeholder="10" step="1"></div>
+                <div style="flex:1;"><label style="font-size:12px;">列間隔 (Height)</label><input type="number" id="def-spacer-h" placeholder="5" step="1"></div>
                 <div style="flex:1;"><label style="font-size:12px;">字體大小 (Font)</label><input type="number" id="def-font-size" placeholder="5" step="1"></div>
             </div>
         </div>
@@ -218,8 +218,7 @@
 <script>
     const translations = {
         "zh-TW": {
-            appTitle: "QR Code 智慧系統",
-            camHint: "👆 點擊畫面：拍照並 OCR 文字辨識",
+            appTitle: "QR Code 智慧系統", camHint: "👆 點擊畫面：拍照並 OCR 文字辨識",
             btnScan: "掃描", btnOcr: "圖片 OCR", btnClear: "清除全部", btnExcel: "依設定轉出 EXCEL",
             btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料 (Enter 可確定)...",
             printSettings: "🖨️ Excel 列印設定", paperSize: "紙張大小 (Paper Size)",
@@ -234,8 +233,7 @@
             statusExcel: "⏳ 正在產生 Excel...", statusExcelDone: "✅ Excel 下載完成！"
         },
         "en-US": {
-            appTitle: "Smart QR Code System",
-            camHint: "👆 Click: Capture & OCR",
+            appTitle: "Smart QR Code System", camHint: "👆 Click: Capture & OCR",
             btnScan: "Scan", btnOcr: "Image OCR", btnClear: "Clear All", btnExcel: "Export Excel",
             btnAdd: "⬇️ Add", batchPlace: "Quick input (Press Enter)...",
             printSettings: "🖨️ Excel Print Settings", paperSize: "Paper Size",
@@ -269,8 +267,8 @@
     let appConfig = { 
         title: "QR Code 智慧系統", gridCount: 12, currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" }, { code: "hi-IN", name: "हिन्दी (Hindi)" } ],
-        defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, // 4x6 inch
-        excelSpacer: { colWidth: 1, rowHeight: 10 }, 
+        defaultPaper: { width: 10.16, height: 15.24, unit: 'cm' }, 
+        excelSpacer: { colWidth: 1, rowHeight: 5 }, 
         excelFontSize: 5,
         excelQrSize: { col: 20, row: 100 }, 
         lastPrintState: null
@@ -393,10 +391,10 @@
         // 間隔設定
         let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 1;
         
-        // QR Code 存放欄寬 (Data Col) 
+        // QR Code 存放欄寬 (User Configured)
         let mainColWidth = parseFloat(appConfig.excelQrSize.col) || 20;
 
-        // 欄位配置：資料, 間隔, 資料, 間隔...
+        // 欄位配置
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
             colsConfig.push({ width: mainColWidth }); 
@@ -442,13 +440,14 @@
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                     
-                    // --- 圖片置中計算 ---
-                    // 1 Excel Col Unit ~= 7.5px (Approx for standard font)
-                    // 1 Excel Row Unit ~= 1.33px
-                    let cellPxW = mainColWidth * 7.5; 
+                    // --- 圖片置中計算 (使用EMU) ---
+                    // 1 Excel Col Unit ~= 8 px (係數調整為 8 以適配置中)
+                    // 1 Excel Row Unit ~= 1.33 px
+                    // 1 px = 9525 EMUs
+                    
+                    let cellPxW = mainColWidth * 8.0; 
                     let cellPxH = IMG_H * 1.33;
                     
-                    // EMU Offset
                     let offX = Math.max(0, (cellPxW - QR_PIXELS) / 2) * 9525;
                     let offY = Math.max(0, (cellPxH - QR_PIXELS) / 2) * 9525;
 
@@ -468,7 +467,7 @@
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                 textCell.font = { size: appConfig.excelFontSize, bold: true };
 
-                // 增加框線
+                // 增加框線 (黑色細框)
                 let borderStyle = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex + 1);
                 imgCell.border = borderStyle;
@@ -480,11 +479,11 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_Centered.xlsx");
+        saveAs(blob, "QRCode_Final.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- Other Functions (Init, Lang, QR, OCR...) ---
+    // --- Other Functions ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -675,10 +674,12 @@
         appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 15.24;
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
 
+        // 儲存間隔設定
         appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 1;
         appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 5;
         appConfig.excelFontSize = parseFloat(document.getElementById('def-font-size').value) || 5;
         
+        // 儲存 QR Cell 尺寸
         appConfig.excelQrSize.col = parseFloat(document.getElementById('def-qr-w').value) || 20;
         appConfig.excelQrSize.row = parseFloat(document.getElementById('def-qr-h').value) || 100;
 
