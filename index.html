@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (DEREK LIN Ultimate UI)</title>
+    <title>QR Code 智慧系統 (DEREK LIN Final UI)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -46,7 +46,6 @@
             background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         
-        /* 頂部控制列 */
         .header-top-row {
             width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px;
         }
@@ -56,7 +55,6 @@
         .lang-select {
             padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff;
         }
-        /* 設定圖示 (修正：只留圖示) */
         .settings-icon { 
             font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; 
             width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;
@@ -69,18 +67,13 @@
         .camera-hint { position: absolute; bottom: 5px; left: 0; right: 0; color: white; background: rgba(0,0,0,0.6); padding: 5px; font-size: 12px; pointer-events: none; }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
-        /* 按鈕群組 (修正：電腦版 1行4列，且寬度填滿) */
+        /* 按鈕群組 */
         .btn-group { 
-            display: grid; 
-            gap: 10px; 
-            width: 100%; 
-            margin: 0 0 10px 0; 
-            grid-template-columns: 1fr 1fr; /* 手機預設：2欄 */
+            display: grid; gap: 10px; width: 100%; margin: 0 0 10px 0; 
+            grid-template-columns: 1fr 1fr; 
         }
         @media (min-width: 768px) { 
-            .btn-group { 
-                grid-template-columns: repeat(4, 1fr); /* 電腦版：4欄 */
-            } 
+            .btn-group { grid-template-columns: repeat(4, 1fr); } 
         }
         
         button {
@@ -96,20 +89,21 @@
         .btn-clear { background-color: #dc3545; }
         button:active { transform: scale(0.98); }
 
-        /* 快速輸入列 (修正：加長，100% 寬度) */
+        /* --- 修正 1：快速輸入列 (Input 長，Btn 短) --- */
         .batch-input-container { 
-            width: 100%; 
-            display: flex; 
-            gap: 10px; 
-            margin-bottom: 15px; 
+            width: 100%; display: flex; gap: 8px; margin-bottom: 15px; 
         }
         .batch-input { 
-            flex: 1; /* 自動填滿剩餘空間 */
+            flex: 1; /* 佔據所有剩餘空間，變長 */
             padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; 
         }
         .btn-batch-add { 
+            width: auto; /* 自動寬度 */
+            min-width: 80px; /* 最小寬度防止太扁 */
+            flex: 0 0 auto; /* 不自動伸縮 */
             background-color: #28a745; color: white; border: none; border-radius: 8px; 
-            padding: 0 25px; font-size: 16px; font-weight: bold; cursor: pointer; 
+            padding: 0 15px; /* 減少內距 */
+            font-size: 16px; font-weight: bold; cursor: pointer; 
             white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15); 
         }
 
@@ -145,14 +139,22 @@
         .form-group { margin-bottom: 15px; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
         
-        /* 語言管理 */
+        /* --- 修正 2：設定內的語言管理 (輸入框加大，按鈕變短) --- */
         .lang-manage-list { margin-top: 10px; border: 1px solid #eee; padding: 5px; max-height: 100px; overflow-y: auto; }
         .lang-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #f0f0f0; align-items: center; }
         .lang-item:last-child { border-bottom: none; }
-        .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; }
-        .lang-add-group { display: flex; gap: 5px; margin-top: 10px; }
-        .lang-add-group input { flex: 1; padding: 5px; font-size: 12px; }
-        .btn-sm-add { background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; font-size: 12px; }
+        .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; width: auto; height: auto; }
+        
+        .lang-add-group { display: flex; gap: 5px; margin-top: 10px; align-items: center; }
+        .lang-add-group input { 
+            flex: 1; /* 輸入框佔滿 */
+            padding: 6px; font-size: 13px; 
+        }
+        .btn-sm-add { 
+            width: auto; flex: 0 0 auto; /* 按鈕不伸縮 */
+            background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; 
+            padding: 6px 12px; font-size: 13px; 
+        }
 
         /* 作者署名 */
         .author-info {
@@ -491,6 +493,7 @@
     };
 
     function initPrintSettings() {
+        // 若無記憶，則使用預設值：custom, 10.16x15.24 cm
         const p = appConfig.lastPrintState || {
             size: 'custom',
             customW: appConfig.defaultPaper.width,
@@ -701,7 +704,7 @@
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- 初始化與設定 ---
+    // --- 標準功能 ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
