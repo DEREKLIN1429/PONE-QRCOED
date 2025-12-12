@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (記憶+預設值版)</title>
+    <title>QR Code 智慧系統 (DEREK LIN Ultimate UI)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -25,7 +25,7 @@
         }
         .left-column { flex: 1; min-width: 300px; width: 100%; }
         
-        /* 右側面板 */
+        /* 右側面板 (電腦版) */
         .right-column {
             width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content;
@@ -35,10 +35,7 @@
         @media (max-width: 900px) {
             .main-layout { flex-direction: column; }
             .right-column { 
-                width: 100%; 
-                box-sizing: border-box; 
-                position: static; 
-                order: 2; 
+                width: 100%; box-sizing: border-box; position: static; order: 2; 
             }
             .left-column { order: 1; }
         }
@@ -46,32 +43,48 @@
         /* Header */
         header { 
             display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; 
-            background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         
+        /* 頂部控制列 */
         .header-top-row {
-            width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px;
+            width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px;
         }
 
-        h2 { color: #333; margin: 0 0 15px 0; font-size: 1.5rem; text-align: center; width: 100%; line-height: 1.4; }
+        h2 { color: #333; margin: 0 0 20px 0; font-size: 1.5rem; text-align: center; width: 100%; line-height: 1.4; }
         
         .lang-select {
             padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff;
         }
+        /* 設定圖示 (修正：只留圖示) */
         .settings-icon { 
-            font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px 10px; border-radius: 20px; 
+            font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; 
+            width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;
+            transition: background 0.3s;
         }
+        .settings-icon:hover { background: #e0e0e0; }
         
         #camera-wrapper { width: 100%; max-width: 500px; margin: 0 auto 15px auto; display: none; position: relative; }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; cursor: pointer; background: #000; }
         .camera-hint { position: absolute; bottom: 5px; left: 0; right: 0; color: white; background: rgba(0,0,0,0.6); padding: 5px; font-size: 12px; pointer-events: none; }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
-        .btn-group { display: grid; gap: 8px; width: 100%; margin: 0 auto 15px auto; grid-template-columns: 1fr 1fr; }
-        @media (min-width: 768px) { .btn-group { grid-template-columns: repeat(4, 1fr); } }
+        /* 按鈕群組 (修正：電腦版 1行4列，且寬度填滿) */
+        .btn-group { 
+            display: grid; 
+            gap: 10px; 
+            width: 100%; 
+            margin: 0 0 10px 0; 
+            grid-template-columns: 1fr 1fr; /* 手機預設：2欄 */
+        }
+        @media (min-width: 768px) { 
+            .btn-group { 
+                grid-template-columns: repeat(4, 1fr); /* 電腦版：4欄 */
+            } 
+        }
         
         button {
-            width: 100%; padding: 10px 5px; border: none; border-radius: 8px; cursor: pointer;
+            width: 100%; padding: 12px 5px; border: none; border-radius: 8px; cursor: pointer;
             font-size: 16px; color: white; font-weight: bold; box-shadow: 0 3px 5px rgba(0,0,0,0.15);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             line-height: 1.2; overflow: hidden; white-space: normal;
@@ -83,10 +96,24 @@
         .btn-clear { background-color: #dc3545; }
         button:active { transform: scale(0.98); }
 
-        .batch-input-container { width: 100%; display: flex; gap: 10px; margin-bottom: 10px; }
-        .batch-input { flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; }
-        .btn-batch-add { background-color: #28a745; color: white; border: none; border-radius: 8px; padding: 0 20px; font-size: 16px; font-weight: bold; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15); }
+        /* 快速輸入列 (修正：加長，100% 寬度) */
+        .batch-input-container { 
+            width: 100%; 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 15px; 
+        }
+        .batch-input { 
+            flex: 1; /* 自動填滿剩餘空間 */
+            padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px; outline: none; 
+        }
+        .btn-batch-add { 
+            background-color: #28a745; color: white; border: none; border-radius: 8px; 
+            padding: 0 25px; font-size: 16px; font-weight: bold; cursor: pointer; 
+            white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15); 
+        }
 
+        /* 格位區 */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding-bottom: 50px; }
         .grid-item { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #e1e1e1; display: flex; flex-direction: column; align-items: center; }
         .grid-label { font-size: 12px; color: #888; margin-bottom: 5px; align-self: flex-start; }
@@ -147,7 +174,7 @@
             <div class="header-top-row">
                 <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)">
                     </select>
-                <div class="settings-icon" onclick="openSettings()">⚙️ 設定</div>
+                <div class="settings-icon" onclick="openSettings()" title="Settings">⚙️</div>
             </div>
 
             <h2 id="app-title" data-i18n="appTitle">QR Code 智慧系統</h2>
@@ -169,6 +196,9 @@
                 </button>
                 <button class="btn-ocr" onclick="triggerOCRFile()">
                     <span class="icon">📄</span><span data-i18n="btnOcr">圖片 OCR</span>
+                </button>
+                <button class="btn-excel" onclick="exportExcelWithImages()">
+                    <span class="icon">📊</span><span data-i18n="btnExcel">轉出 EXCEL</span>
                 </button>
                 <button class="btn-clear" onclick="clearAll()">
                     <span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span>
@@ -196,6 +226,7 @@
                 <input type="number" id="custom-width" placeholder="W" onchange="onPrintSettingChange()">
                 <input type="number" id="custom-height" placeholder="H" onchange="onPrintSettingChange()">
                 <select id="custom-unit" onchange="onPrintSettingChange()">
+                    <option value="cm">cm</option>
                     <option value="in">inch</option>
                     <option value="mm">mm</option>
                 </select>
@@ -242,6 +273,7 @@
                 </div>
             </div>
             <select id="margin-unit" style="margin-top:5px;" onchange="onPrintSettingChange()">
+                <option value="cm">cm</option>
                 <option value="in">inch</option>
                 <option value="mm">mm</option>
             </select>
@@ -272,9 +304,24 @@
                 <input type="number" id="def-paper-w" placeholder="W" step="0.01">
                 <input type="number" id="def-paper-h" placeholder="H" step="0.01">
                 <select id="def-paper-unit">
+                    <option value="cm">cm</option>
                     <option value="in">inch</option>
                     <option value="mm">mm</option>
                 </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
+            <label>Excel 間隔設定 (Spacing)：</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <div style="flex:1;">
+                    <label style="font-size:12px;">欄間隔 (Col Width)</label>
+                    <input type="number" id="def-spacer-w" placeholder="0.5" step="0.1">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:12px;">列間隔 (Row Height)</label>
+                    <input type="number" id="def-spacer-h" placeholder="9" step="1">
+                </div>
             </div>
         </div>
 
@@ -414,13 +461,17 @@
             { code: "en-US", name: "English" },
             { code: "hi-IN", name: "हिन्दी (Hindi)" }
         ],
-        // 預設自訂紙張 (設定內)
+        // 預設自訂紙張 (設定內) -> 10.16 x 15.24 cm
         defaultPaper: {
-            width: 4.49,
-            height: 7.5,
-            unit: 'in'
+            width: 10.16,
+            height: 15.24,
+            unit: 'cm'
         },
-        // 上次使用的列印設定 (自動記憶)
+        // Excel 間隔設定
+        excelSpacer: {
+            colWidth: 0.5,
+            rowHeight: 9
+        },
         lastPrintState: null
     };
 
@@ -432,16 +483,14 @@
         initLangSelect(); 
         applyLanguage(appConfig.currentLang);
         initGrid(); 
-        initPrintSettings(); // 初始化列印設定UI
+        initPrintSettings(); 
         
         document.getElementById('batch-input').addEventListener('keydown', function(event) {
             if (event.key === 'Enter') processBatchInput();
         });
     };
 
-    // --- 初始化列印設定 (讀取記憶或預設值) ---
     function initPrintSettings() {
-        // 如果有上次記憶，就用記憶，否則用預設
         const p = appConfig.lastPrintState || {
             size: 'custom',
             customW: appConfig.defaultPaper.width,
@@ -449,29 +498,26 @@
             customUnit: appConfig.defaultPaper.unit,
             orientation: 'portrait',
             cols: 3,
-            margins: { t:0, b:0, l:0, r:0, unit:'in' } // 邊界預設 0
+            margins: { t:0, b:0, l:0, r:0, unit:'cm' } 
         };
 
         document.getElementById('print-size').value = p.size;
         document.getElementById('print-orientation').value = p.orientation;
         document.getElementById('print-cols').value = p.cols;
 
-        // Custom inputs
         document.getElementById('custom-width').value = p.customW || appConfig.defaultPaper.width;
         document.getElementById('custom-height').value = p.customH || appConfig.defaultPaper.height;
         document.getElementById('custom-unit').value = p.customUnit || appConfig.defaultPaper.unit;
         
-        // Margins
         document.getElementById('margin-top').value = p.margins.t;
         document.getElementById('margin-bottom').value = p.margins.b;
         document.getElementById('margin-left').value = p.margins.l;
         document.getElementById('margin-right').value = p.margins.r;
         document.getElementById('margin-unit').value = p.margins.unit;
 
-        toggleCustomSize(); // 顯示或隱藏手動輸入框
+        toggleCustomSize(); 
     }
 
-    // --- 當列印設定變更時，自動儲存 ---
     function onPrintSettingChange() {
         const state = {
             size: document.getElementById('print-size').value,
@@ -489,7 +535,7 @@
             }
         };
         appConfig.lastPrintState = state;
-        saveSettingsDirectly(); // 存入 localStorage
+        saveSettingsDirectly(); 
         toggleCustomSize();
     }
 
@@ -503,7 +549,6 @@
         }
     }
 
-    // --- Excel 匯出 (修復存檔 + 間隔) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -538,54 +583,65 @@
         const mLeft = parseFloat(document.getElementById('margin-left').value) || 0;
         const mRight = parseFloat(document.getElementById('margin-right').value) || 0;
 
-        const toInches = (val) => (marginUnit === 'mm') ? val / 25.4 : val;
+        const toInches = (val, unit) => {
+            if (unit === 'cm') return val / 2.54;
+            if (unit === 'mm') return val / 25.4;
+            return val;
+        };
 
         worksheet.pageSetup.margins = {
-            top: toInches(mTop),
-            bottom: toInches(mBot),
-            left: toInches(mLeft),
-            right: toInches(mRight),
+            top: toInches(mTop, marginUnit),
+            bottom: toInches(mBot, marginUnit),
+            left: toInches(mLeft, marginUnit),
+            right: toInches(mRight, marginUnit),
             header: 0, footer: 0 
         };
 
         // 欄寬計算
         let totalWidthUnits = (printOrientation === 'landscape') ? 120 : 85; 
         if(printSizeVal === 'custom') {
-             let rawW = parseFloat(document.getElementById('custom-width').value) || 4.49;
+             let rawW = parseFloat(document.getElementById('custom-width').value) || 10.16;
              let cUnit = document.getElementById('custom-unit').value;
-             let wMm = (cUnit === 'in') ? rawW * 25.4 : rawW;
+             // 統一轉為 cm 計算比例
+             let wCm = rawW;
+             if(cUnit === 'in') wCm = rawW * 2.54;
+             if(cUnit === 'mm') wCm = rawW / 10;
              
              if(printOrientation === 'landscape') { 
-                 let rawH = parseFloat(document.getElementById('custom-height').value) || 7.5;
-                 let hMm = (cUnit === 'in') ? rawH * 25.4 : rawH;
-                 wMm = hMm;
+                 let rawH = parseFloat(document.getElementById('custom-height').value) || 15.24;
+                 let hCm = rawH;
+                 if(cUnit === 'in') hCm = rawH * 2.54;
+                 if(cUnit === 'mm') hCm = rawH / 10;
+                 wCm = hCm;
              }
-             // 粗略換算: 210mm ~ 85 Excel units
-             totalWidthUnits = wMm * (85 / 210);
+             // 粗略換算: A4 寬 21cm ~ 85 Excel units
+             totalWidthUnits = wCm * (85 / 21);
         }
 
-        // 計算每欄寬度
-        // 需要扣除間隔欄的寬度 (間隔欄固定 0.5)
-        // 總空間 = (printCols * colWidth) + ((printCols-1) * 0.5)
-        // colWidth = (Total - (cols-1)*0.5) / cols
-        let spacerWidth = 0.5;
-        let availableWidth = totalWidthUnits - ((printCols - 1) * spacerWidth);
-        let mainColWidth = availableWidth / printCols;
-        if(mainColWidth < 1) mainColWidth = 10; // 防呆
+        // 間隔設定
+        let spacerW = parseFloat(appConfig.excelSpacer.colWidth) || 0.5;
+        let availableW = totalWidthUnits - ((printCols - 1) * spacerW);
+        let mainColWidth = availableW / printCols;
+        if(mainColWidth < 1) mainColWidth = 10; 
 
+        // 設定 Columns (資料欄, 間隔欄, 資料欄...)
         let colsConfig = [];
         for(let k=0; k<printCols; k++) { 
             colsConfig.push({ width: mainColWidth }); 
             if (k < printCols - 1) {
-                colsConfig.push({ width: spacerWidth }); // 間隔欄
+                colsConfig.push({ width: spacerW }); // 間隔欄
             }
         }
         worksheet.columns = colsConfig;
 
+        // 設定 Row 1 (頂部空白列)
+        let topSpacerH = parseFloat(appConfig.excelSpacer.rowHeight) || 9;
+        worksheet.getRow(1).height = topSpacerH;
+
         let validItemIndex = 0; 
         const IMG_H = 100;
         const TXT_H = 30;
-        const ROW_SPACER_H = 9; // 列間隔
+        const ROW_SPACER_H = parseFloat(appConfig.excelSpacer.rowHeight) || 9; // 列間隔高度
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
@@ -593,11 +649,11 @@
                 let colGridIndex = validItemIndex % printCols; 
                 let rowGridIndex = Math.floor(validItemIndex / printCols);
 
-                // Excel Column Index (0-based for JS array, add 1 for cell access)
+                // Excel Column Index
                 let excelColIndex = colGridIndex * 2; 
 
                 // Row Numbers
-                let imgRowNumber = 1 + (rowGridIndex * 3); 
+                let imgRowNumber = 2 + (rowGridIndex * 3); 
                 let textRowNumber = imgRowNumber + 1;
                 let spacerRowNumber = imgRowNumber + 2;
 
@@ -640,12 +696,12 @@
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QRCode_Print.xlsx");
+        saveAs(blob, "QRCode_Final.xlsx");
         
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- 標準功能 ---
+    // --- 初始化與設定 ---
     function initLangSelect() {
         const select = document.getElementById('main-lang-select');
         select.innerHTML = "";
@@ -657,13 +713,11 @@
         select.value = appConfig.currentLang;
         updateLangManageList();
     }
-
     function changeLanguage(langCode) {
         appConfig.currentLang = langCode;
         applyLanguage(langCode);
         saveSettingsDirectly();
     }
-
     function applyLanguage(langCode) {
         const t = translations[langCode] || translations["en-US"] || translations["zh-TW"];
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -676,7 +730,6 @@
         });
         document.getElementById('app-title').innerText = appConfig.title; 
     }
-
     function updateLangManageList() {
         const container = document.getElementById('lang-list-container');
         container.innerHTML = "";
@@ -687,7 +740,6 @@
             container.appendChild(div);
         });
     }
-
     function addNewLanguage() {
         const code = document.getElementById('new-lang-code').value.trim();
         const name = document.getElementById('new-lang-name').value.trim();
@@ -701,7 +753,6 @@
         option.value = code; option.text = name;
         select.appendChild(option);
     }
-
     function removeLanguage(index) {
         if(!confirm("Delete this language option?")) return;
         const removed = appConfig.availableLangs.splice(index, 1);
@@ -739,7 +790,6 @@
             gridContainer.appendChild(itemDiv);
         }
     }
-
     function generateSingleCode(index) {
         let inputVal = document.getElementById('data-' + index).value.trim();
         let container = document.getElementById('code-img-' + index);
@@ -748,7 +798,6 @@
         if (inputVal === "") { container.innerText = "(Empty)"; return; }
         try { new QRCode(container, { text: inputVal, width: 100, height: 100, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M }); } catch(e) {}
     }
-
     function processBatchInput() {
         let inputField = document.getElementById('batch-input');
         let text = inputField.value.trim();
@@ -767,7 +816,6 @@
         }
         inputField.value = "";
     }
-
     function fillData(text) {
         if (!confirm("Data: \n" + text + "\n\nConfirm?")) return;
         let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
@@ -783,8 +831,6 @@
             if (!placed) { alert(t.alertFull); return; }
         }
     }
-
-    // --- 相機 ---
     function startQRScan() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         const wrapper = document.getElementById('camera-wrapper');
@@ -836,11 +882,13 @@
     function openSettings() {
         document.getElementById('set-title').value = appConfig.title;
         document.getElementById('set-count').value = appConfig.gridCount;
-        // 預設紙張
         document.getElementById('def-paper-w').value = appConfig.defaultPaper.width;
         document.getElementById('def-paper-h').value = appConfig.defaultPaper.height;
         document.getElementById('def-paper-unit').value = appConfig.defaultPaper.unit;
-        
+        // 載入間隔設定
+        document.getElementById('def-spacer-w').value = appConfig.excelSpacer.colWidth;
+        document.getElementById('def-spacer-h').value = appConfig.excelSpacer.rowHeight;
+
         updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
@@ -850,10 +898,13 @@
         appConfig.title = document.getElementById('set-title').value;
         appConfig.gridCount = parseInt(document.getElementById('set-count').value) || 12;
         
-        // 儲存預設紙張
-        appConfig.defaultPaper.width = parseFloat(document.getElementById('def-paper-w').value) || 4.49;
-        appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 7.5;
+        appConfig.defaultPaper.width = parseFloat(document.getElementById('def-paper-w').value) || 10.16;
+        appConfig.defaultPaper.height = parseFloat(document.getElementById('def-paper-h').value) || 15.24;
         appConfig.defaultPaper.unit = document.getElementById('def-paper-unit').value;
+
+        // 儲存間隔設定
+        appConfig.excelSpacer.colWidth = parseFloat(document.getElementById('def-spacer-w').value) || 0.5;
+        appConfig.excelSpacer.rowHeight = parseFloat(document.getElementById('def-spacer-h').value) || 9;
 
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
         initGrid();
@@ -867,7 +918,8 @@
             let parsed = JSON.parse(saved);
             if(!parsed.availableLangs) parsed.availableLangs = appConfig.availableLangs;
             if(!parsed.currentLang) parsed.currentLang = "zh-TW";
-            if(!parsed.defaultPaper) parsed.defaultPaper = { width: 4.49, height: 7.5, unit: 'in' };
+            if(!parsed.defaultPaper) parsed.defaultPaper = { width: 10.16, height: 15.24, unit: 'cm' };
+            if(!parsed.excelSpacer) parsed.excelSpacer = { colWidth: 0.5, rowHeight: 9 };
             appConfig = parsed;
         }
     }
