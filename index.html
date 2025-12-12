@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (Excel修復版)</title>
+    <title>QR Code 智慧系統 (批次輸入版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -41,56 +41,49 @@
         }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; }
 
-        /* 按鈕樣式 */
+        /* 按鈕群組 */
         .btn-group { 
-            display: grid; 
-            gap: 8px; 
-            width: 100%;
-            max-width: 800px; 
-            margin: 0 auto 20px auto;
+            display: grid; gap: 8px; width: 100%; max-width: 800px; margin: 0 auto 15px auto;
             grid-template-columns: 1fr 1fr; /* 手機預設 2欄 */
         }
-
         @media (min-width: 768px) {
             .btn-group { grid-template-columns: repeat(4, 1fr); }
         }
         
         button {
-            width: 100%;
-            padding: 10px 5px; 
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px; 
-            color: white;
-            font-weight: bold;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            line-height: 1.2;
-            overflow: hidden;
-            white-space: normal;
+            width: 100%; padding: 10px 5px; border: none; border-radius: 8px; cursor: pointer;
+            font-size: 18px; color: white; font-weight: bold; box-shadow: 0 3px 5px rgba(0,0,0,0.15);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            line-height: 1.2; overflow: hidden; white-space: normal;
         }
-        
         button span.icon { font-size: 20px; margin-bottom: 2px; display: block; }
         .btn-excel { font-size: 16px; } 
-
         .btn-scan { background-color: #007bff; }
         .btn-ocr { background-color: #ffc107; color: #333; }
         .btn-excel { background-color: #17a2b8; }
         .btn-clear { background-color: #dc3545; }
         button:active { transform: scale(0.98); }
 
+        /* --- 新增：快速輸入列樣式 --- */
+        .batch-input-container {
+            width: 100%; max-width: 800px; margin: 0 auto 20px auto;
+            display: flex; gap: 10px;
+        }
+        .batch-input {
+            flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 8px;
+            outline: none;
+        }
+        .btn-batch-add {
+            background-color: #28a745; color: white; border: none; border-radius: 8px;
+            padding: 0 20px; font-size: 16px; font-weight: bold; cursor: pointer;
+            white-space: nowrap; box-shadow: 0 3px 5px rgba(0,0,0,0.15);
+        }
+        .btn-batch-add:hover { background-color: #218838; }
+
         /* 格位排版 */
         .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding-bottom: 50px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px; max-width: 1200px; margin: 0 auto; padding-bottom: 50px;
         }
 
         .grid-item {
@@ -100,24 +93,24 @@
         }
 
         .grid-label { font-size: 12px; color: #888; margin-bottom: 5px; align-self: flex-start; }
-        input {
+        
+        /* 優化：QR Code 上方的輸入欄 */
+        .grid-input {
             width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
-            box-sizing: border-box; margin-bottom: 5px; font-size: 16px;
+            box-sizing: border-box; margin-bottom: 8px; 
+            font-size: 16px; font-weight: bold; color: #333; /* 加粗與加深顏色 */
+            text-align: center; background-color: #fafafa;
         }
+        .grid-input:focus { border-color: #007bff; background-color: #fff; }
 
-        /* 條碼顯示區 */
+        /* QR 顯示區 */
         .code-display-area {
             width: 100%; height: 120px; background-color: #fff;
             display: flex; justify-content: center; align-items: center;
-            margin-bottom: 5px; border: 1px dashed #ddd; 
-            /* 移除點擊手勢，避免誤觸 */
-            overflow: hidden; position: relative;
+            margin-bottom: 5px; border: 1px dashed #ddd; overflow: hidden; position: relative;
         }
-        /* 強制圖片大小 */
         .code-display-area img, .code-display-area canvas { 
-            max-width: 95% !important; 
-            max-height: 95% !important; 
-            display: block;
+            max-width: 95% !important; max-height: 95% !important; display: block;
         }
         
         .qr-text-info {
@@ -162,6 +155,12 @@
             </button>
             <input type="file" id="ocr-file-input" style="display: none;" accept="image/*" onchange="processOCRFile(this)">
         </div>
+
+        <div class="batch-input-container">
+            <input type="text" id="batch-input" class="batch-input" placeholder="在此輸入資料 (可貼上多筆)...">
+            <button class="btn-batch-add" onclick="processBatchInput()">⬇️ 加入</button>
+        </div>
+
     </header>
 
     <div class="grid-container" id="main-grid"></div>
@@ -188,8 +187,6 @@
         let appConfig = { title: "QR Code 智慧系統", gridCount: 12, fontSize: 12 };
         let html5QrCode;
         let scanTimeout; 
-        
-        // 移除 codeModes，強制只使用 QR Code
 
         window.onload = function() { loadConfig(); initGrid(); };
 
@@ -208,6 +205,7 @@
 
                 let input = document.createElement('input');
                 input.type = 'text';
+                input.className = 'grid-input'; // 使用新的 class
                 input.id = 'data-' + i;
                 input.placeholder = '待輸入...';
                 input.onkeyup = function() { generateSingleCode(i); };
@@ -215,7 +213,6 @@
                 let codeDiv = document.createElement('div');
                 codeDiv.id = 'code-container-' + i;
                 codeDiv.className = 'code-display-area';
-                // 移除 onclick 切換功能，防止變成長條碼
                 
                 let imgContent = document.createElement('div');
                 imgContent.id = 'code-img-' + i; 
@@ -238,12 +235,11 @@
             let container = document.getElementById('code-img-' + index);
             let textContainer = document.getElementById('text-info-' + index);
             
-            container.innerHTML = ""; // 清空舊圖
+            container.innerHTML = ""; 
             textContainer.innerText = inputVal;
 
             if (inputVal === "") { container.innerText = "(空)"; return; }
 
-            // 強制產生 QR Code (不使用 JsBarcode)
             try {
                 new QRCode(container, {
                     text: inputVal,
@@ -253,11 +249,45 @@
                     colorLight : "#ffffff",
                     correctLevel : QRCode.CorrectLevel.M
                 });
-            } catch(e) {
-                console.error("QR Gen Error", e);
-            }
+            } catch(e) { console.error(e); }
         }
 
+        // --- 新增：處理快速輸入列的資料 ---
+        function processBatchInput() {
+            let inputField = document.getElementById('batch-input');
+            let text = inputField.value.trim();
+            
+            if (!text) {
+                alert("請輸入資料！");
+                return;
+            }
+
+            // 直接呼叫填充邏輯 (這裡不需要確認視窗，因為是使用者主動按加入)
+            // 將輸入的文字依據 "換行" 或 "逗號" 切割
+            let parts = text.split(/[\n,]+/).filter(item => item.trim().length > 0);
+            
+            for (let part of parts) {
+                let placed = false;
+                for (let i = 1; i <= appConfig.gridCount; i++) {
+                    let input = document.getElementById('data-' + i);
+                    if (input.value.trim() === "") {
+                        input.value = part;
+                        generateSingleCode(i);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    alert("⚠️ 欄位已滿！無法再輸入更多資料。\n剩餘未填入資料：" + part + "...");
+                    return; // 停止填入
+                }
+            }
+            
+            // 成功後清空輸入欄
+            inputField.value = "";
+        }
+
+        // --- 掃描與填入 (保留確認視窗) ---
         function fillData(text) {
             let confirmMsg = "掃描到的資料：\n\n" + text + "\n\n確定要填入嗎？";
             if (!confirm(confirmMsg)) {
@@ -283,7 +313,7 @@
             }
         }
 
-        // --- EXCEL 匯出修復版 ---
+        // --- EXCEL 匯出 ---
         async function exportExcelWithImages() {
             let hasData = false;
             for(let i=1; i<=appConfig.gridCount; i++){
@@ -292,15 +322,12 @@
             if(!hasData) { alert("目前沒有資料可以匯出！"); return; }
 
             const statusDiv = document.getElementById('ocr-status');
-            statusDiv.innerText = "⏳ 正在產生 Excel (請稍候)...";
+            statusDiv.innerText = "⏳ 正在產生 Excel...";
 
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('QR Codes');
 
-            // 設定 3 欄寬度
             worksheet.columns = [{ width: 25 }, { width: 25 }, { width: 25 }];
-
-            // 表頭
             worksheet.mergeCells('A1:C1');
             worksheet.getCell('A1').value = "QR Code 資料清單";
             worksheet.getCell('A1').font = { bold: true, size: 14 };
@@ -318,51 +345,35 @@
                     let imgRowNumber = 2 + (rowGroupIndex * 2);
                     let textRowNumber = imgRowNumber + 1;
 
-                    // 設定高度
                     worksheet.getRow(imgRowNumber).height = 100;
                     worksheet.getRow(textRowNumber).height = 30;
 
-                    // --- 圖片抓取邏輯 (修復重點) ---
-                    // qrcode.js 可能產生 canvas 或 img，我們兩個都試抓
                     let containerDiv = document.getElementById('code-img-' + i);
                     let canvasObj = containerDiv.querySelector('canvas');
                     let imgObj = containerDiv.querySelector('img');
                     let base64Image = null;
 
-                    if (canvasObj) {
-                        // 優先抓 Canvas (通常最準)
-                        base64Image = canvasObj.toDataURL('image/png');
-                    } else if (imgObj && imgObj.src) {
-                        // 如果只有 img
-                        base64Image = imgObj.src;
-                    }
+                    if (canvasObj) base64Image = canvasObj.toDataURL('image/png');
+                    else if (imgObj && imgObj.src) base64Image = imgObj.src;
 
                     if (base64Image) {
-                        const imageId = workbook.addImage({
-                            base64: base64Image,
-                            extension: 'png',
-                        });
-                        
-                        // 使用 editAs: 'oneCell' 確保圖片固定在格子內
+                        const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
                         worksheet.addImage(imageId, {
                             tl: { col: colIndex, row: imgRowNumber - 1 },
                             ext: { width: 100, height: 100 },
                             editAs: 'oneCell' 
                         });
                     } else {
-                        // 真的抓不到圖時的備案
                         let cell = worksheet.getCell(imgRowNumber, colIndex + 1);
                         cell.value = "(無圖形)";
                         cell.alignment = { vertical: 'middle', horizontal: 'center' };
                     }
 
-                    // --- 文字資料 ---
                     let textCell = worksheet.getCell(textRowNumber, colIndex + 1);
                     textCell.value = val;
                     textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                     textCell.font = { size: 12, bold: true };
 
-                    // 框線
                     let imgCell = worksheet.getCell(imgRowNumber, colIndex + 1);
                     imgCell.border = { top: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
                     textCell.border = { bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
@@ -373,7 +384,7 @@
 
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-            saveAs(blob, "QRCode_Data_Fixed.xlsx");
+            saveAs(blob, "QRCode_Data_Batch.xlsx");
             
             statusDiv.innerText = "✅ Excel 下載完成！";
         }
@@ -385,10 +396,7 @@
             html5QrCode = new Html5Qrcode("reader");
             resetScanTimer();
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-                (decodedText) => {
-                    fillData(decodedText); 
-                    resetScanTimer();
-                }, () => {}
+                (decodedText) => { fillData(decodedText); resetScanTimer(); }, () => {}
             ).then(() => {
                 setTimeout(() => {
                     let videoElement = document.querySelector("#reader video");
