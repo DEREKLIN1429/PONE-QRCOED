@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.8 - 精緻對焦版)</title>
+    <title>QR Code 智慧系統 (V3.9 - 極致精巧版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -521,7 +521,7 @@
         }
     }
 
-    // --- [V3.8] 掃描邏輯 ---
+    // --- [V3.9] 掃描邏輯 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -544,7 +544,7 @@
         }
     }
 
-    // [新增] V3.8 繪製四角 L 型括號 (尺寸減半: 25px)
+    // [新增] V3.9 繪製四角 L 型括號 (極致精巧版: 10px)
     function drawDetectedCorners(points) {
         const canvas = document.getElementById('qr-canvas');
         const video = document.querySelector('#reader video');
@@ -570,8 +570,8 @@
         // 將點轉換為畫布座標
         const p = points.map(pt => ({ x: pt.x * scaleX, y: pt.y * scaleY }));
 
-        // [修改] 括號長度減半 (50 -> 25)
-        const bracketLen = 25; 
+        // [修改] 括號長度大幅縮小 (模擬 0.3CM 視覺感)
+        const bracketLen = 10; 
 
         ctx.beginPath();
 
@@ -623,7 +623,7 @@
             (decodedText, decodedResult) => {
                 currentDetectedCode = decodedText;
                 
-                // [V3.8] 呼叫智能 L 型括號繪製
+                // [V3.9] 呼叫智能 L 型括號繪製
                 if (decodedResult && decodedResult.result && decodedResult.result.points) {
                     drawDetectedCorners(decodedResult.result.points);
                 }
