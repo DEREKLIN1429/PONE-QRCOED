@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.6 - L型括號鎖定版)</title>
+    <title>QR Code 智慧系統 (V3.7 - 極簡追蹤版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -43,7 +43,7 @@
         }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        /* [V3.6] 動態追蹤畫布 - 設為最高層級 */
+        /* [V3.7] 動態追蹤畫布 - 唯一的覆蓋層 */
         #qr-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -51,34 +51,7 @@
             z-index: 20; 
         }
 
-        /* 靜態中心對準框 (輔助用，沒掃到時顯示) */
-        #scan-overlay { 
-            position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            width: 250px; height: 250px; 
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            z-index: 10; border-radius: 15px; pointer-events: none; display: none; 
-        }
-        /* 四個角落的裝飾 */
-        #scan-overlay::before, #scan-overlay::after {
-            content: ''; position: absolute; width: 20px; height: 20px; border-color: rgba(255,255,255,0.5); border-style: solid;
-        }
-        #scan-overlay::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-        #scan-overlay::after { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-        
-        /* 掃描線動畫 */
-        .scan-line {
-            width: 100%; height: 2px; background: rgba(255, 0, 0, 0.5); 
-            box-shadow: 0 0 4px rgba(255, 0, 0, 0.8);
-            position: absolute; top: 0;
-            animation: scanMove 2s infinite linear;
-        }
-        @keyframes scanMove {
-            0% { top: 5%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 95%; opacity: 0; }
-        }
+        /* 移除原本的 #scan-overlay 與 .scan-line 樣式，保持畫面乾淨 */
         
         .camera-hint { 
             position: absolute; bottom: 10px; left: 0; right: 0;
@@ -190,10 +163,6 @@
         
         <div id="camera-wrapper" onclick="handleCameraClick()">
             <canvas id="qr-canvas"></canvas>
-            
-            <div id="scan-overlay">
-                <div class="scan-line"></div>
-            </div>
             
             <div id="reader"></div>
             <div id="cam-hint-text" class="camera-hint">👆 點擊畫面開始掃描</div>
@@ -554,7 +523,7 @@
         }
     }
 
-    // --- [V3.6] 掃描邏輯 & 智能 L 型鎖定 ---
+    // --- [V3.7] 掃描邏輯 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -577,7 +546,7 @@
         }
     }
 
-    // [新增] V3.6 繪製四角 L 型括號 (Bracket Style)
+    // [新增] V3.6/3.7 繪製四角 L 型括號 (Bracket Style)
     function drawDetectedCorners(points) {
         const canvas = document.getElementById('qr-canvas');
         const video = document.querySelector('#reader video');
@@ -645,7 +614,6 @@
 
     function startScan() {
         const wrapper = document.getElementById('camera-wrapper');
-        const overlay = document.getElementById('scan-overlay');
         const hint = document.getElementById('cam-hint-text');
         
         wrapper.style.display = "block";
@@ -662,7 +630,7 @@
             (decodedText, decodedResult) => {
                 currentDetectedCode = decodedText;
                 
-                // [V3.6] 呼叫智能 L 型括號繪製
+                // [V3.7] 呼叫智能 L 型括號繪製
                 if (decodedResult && decodedResult.result && decodedResult.result.points) {
                     drawDetectedCorners(decodedResult.result.points);
                 }
@@ -676,7 +644,6 @@
             }
         ).then(() => {
             isScanning = true;
-            overlay.style.display = "block";
             hint.style.display = "flex";
             hint.innerText = "👀 掃描中... 請將 QR Code 對準畫面";
             hint.style.color = "white";
@@ -707,10 +674,8 @@
 
         return html5QrCode.stop().then(() => {
             isScanning = false;
-            const overlay = document.getElementById('scan-overlay');
             const hint = document.getElementById('cam-hint-text');
             
-            overlay.style.display = "none";
             clearCanvas(); 
             
             hint.style.display = "flex";
