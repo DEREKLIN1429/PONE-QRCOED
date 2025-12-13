@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.0 - Google Sheet 整合版)</title>
+    <title>QR Code 智慧系統 (V3.2 - 下拉選單版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -54,7 +54,7 @@
 
         /* 按鈕群組 - RWD */
         .btn-group { display: grid; gap: 10px; width: 100%; margin: 0 0 10px 0; grid-template-columns: 1fr 1fr; }
-        @media (min-width: 768px) { .btn-group { grid-template-columns: repeat(5, 1fr); } } /* 調整為5欄以容納新按鈕 */
+        @media (min-width: 768px) { .btn-group { grid-template-columns: repeat(5, 1fr); } } 
         
         button { width: 100%; padding: 12px 5px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; color: white; font-weight: bold; box-shadow: 0 3px 5px rgba(0,0,0,0.15); display: flex; flex-direction: column; justify-content: center; align-items: center; line-height: 1.2; overflow: hidden; white-space: normal; }
         button span.icon { font-size: 20px; margin-bottom: 2px; display: block; }
@@ -63,7 +63,7 @@
         .btn-img-export { background-color: #fd7e14; color: white; } 
         .btn-excel { background-color: #17a2b8; }
         .btn-clear { background-color: #dc3545; }
-        .btn-gsheet { background-color: #0f9d58; } /* Google Sheet 綠色 */
+        .btn-gsheet { background-color: #0f9d58; } 
         button:active { transform: scale(0.98); }
 
         .batch-input-container { width: 100%; display: flex; gap: 8px; margin-bottom: 15px; }
@@ -95,8 +95,9 @@
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        
+        .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .form-group select { background-color: white; cursor: pointer; }
+
         .logo-preview-container { margin-top: 10px; text-align: center; }
         #logo-preview { max-width: 80px; max-height: 80px; border: 1px solid #ddd; padding: 2px; display: none; }
         .btn-remove-logo { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; display: none; margin-left: 10px; }
@@ -131,7 +132,6 @@
 
         .author-info { position: fixed; bottom: 0; left: 0; right: 0; background-color: #333; color: #fff; text-align: center; padding: 8px; font-size: 14px; letter-spacing: 1px; z-index: 900; }
         
-        /* 隱藏容器，用於後台生成圖片 */
         #hidden-canvas-container { display: none; }
     </style>
 </head>
@@ -260,16 +260,27 @@
         <h3>🌐 匯入 Google Sheet 資料</h3>
         
         <div class="settings-info-section" style="border-left-color: #0f9d58; background: #e6f4ea;">
-            <div class="settings-info-title">📖 使用教學</div>
-            1. 在 Google 試算表，點擊 <b>檔案 > 分享 > 發布到網路</b>。<br>
-            2. 選擇 <b>"整份文件"</b> 或 <b>"工作表"</b>。<br>
-            3. 格式請務必選擇 <b>"逗號分隔值 (.csv)"</b>。<br>
-            4. 複製產生的連結並貼在下方。
+            <div class="settings-info-title">📖 使用說明</div>
+            1. 請選擇 <b>部門/資料來源</b> (自動帶入網址)。<br>
+            2. 或在下方欄位手動 <b>輸入/更新</b> 連結。<br>
+            3. 確認欄位代號正確後點擊匯入。
         </div>
 
         <div class="form-group">
-            <label>🔗 CSV 連結 (Publish Link)：</label>
-            <input type="text" id="gs-url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+            <label>📂 選擇資料來源 (Presets)：</label>
+            <select id="gs-preset-select" onchange="updateGsUrl(this.value)" style="margin-bottom: 5px; background-color: #fff8e1; border-color: #ffc107;">
+                <option value="https://docs.google.com/spreadsheets/d/e/2PACX-1vR35DpG92fXKX8OtnYpc55LmgwtU0jwFDt00A2JmmBCKP9zIUgKuR0lxK0p464gujLb6uJ4OU6taMNM/pub?gid=0&single=true&output=csv" selected>MIXING</option>
+                <option value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTaIXaEhRIZ3HuChmQtQ6o5_-J4QZGkqPprR2dTrvgAfJhVWziOHjLCDpHzGv9PV8Pj4KFWBapEbJh9/pub?gid=0&single=true&output=csv">Extrusion</option>
+                <option value="https://docs.google.com/spreadsheets/d/e/2PACX-1vQlv2rGdYt9OM8tRTvngbS86Sb6enayZsagWz4tJBiJeQW8hkNZ1BmV2OSuOaXp0t4VGhkZr-opvmY4/pub?gid=0&single=true&output=csv">CUTTING</option>
+                <option value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSXa3JHD-a3QCbmvdkM4vSagRM61xUHiDYQQBxgYqIlTGBC0_JhdOaenEcrBEbqh90azCA1budxDbV7/pub?gid=0&single=true&output=csv">RW_WH</option>
+                <option value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSZvBTerw9KScmjuFfpY83vEAqLqcK1btX8ivgiIULwQR9uRc7W0_2hd9Njpga9Ij0vZyBaW1GYKnUv/pub?gid=0&single=true&output=csv">Calendering</option>
+                <option value="">-- 自訂/手動輸入 --</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>🔗 CSV 連結 (可編輯/更新)：</label>
+            <input type="text" id="gs-url" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vR35DpG92fXKX8OtnYpc55LmgwtU0jwFDt00A2JmmBCKP9zIUgKuR0lxK0p464gujLb6uJ4OU6taMNM/pub?gid=0&single=true&output=csv">
         </div>
 
         <div class="form-group">
@@ -357,9 +368,21 @@
         document.getElementById('batch-input').addEventListener('keydown', function(event) { if (event.key === 'Enter') processBatchInput(); });
     };
 
-    // --- Google Sheet 邏輯 (新) ---
+    // --- Google Sheet 邏輯 (更新版) ---
     function openGoogleSheetModal() {
         document.getElementById('googleSheetModal').style.display = "block";
+    }
+
+    // 當下拉選單改變時，更新輸入框的值
+    function updateGsUrl(selectedValue) {
+        const input = document.getElementById('gs-url');
+        if (selectedValue) {
+            input.value = selectedValue;
+        } else {
+            // 如果選到「自訂」，清空欄位讓使用者輸入
+            input.value = "";
+            input.focus();
+        }
     }
 
     function columnLetterToIndex(letter) {
