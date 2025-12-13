@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.9 - 極致精巧版)</title>
+    <title>QR Code 智慧系統 (V3.11 - 自動清空匯入版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -297,7 +297,7 @@
 
         <div class="form-group">
             <label>🔡 抓取欄位 (例如 A, B, D...)：</label>
-            <input type="text" id="gs-col" placeholder="D" style="text-transform: uppercase; width: 60px; text-align: center;">
+            <input type="text" id="gs-col" value="C" placeholder="C" style="text-transform: uppercase; width: 60px; text-align: center;">
         </div>
 
         <div class="form-group">
@@ -476,6 +476,11 @@
                 return;
             }
 
+            // [V3.11] 自動清空：在填入資料前，先清空所有欄位
+            for (let i = 1; i <= appConfig.gridCount; i++) {
+                clearSlot(i);
+            }
+
             fillData(importedData.join("\n"), false);
 
             alert(`✅ 成功匯入 ${importedData.length} 筆資料！`);
@@ -521,7 +526,7 @@
         }
     }
 
-    // --- [V3.9] 掃描邏輯 ---
+    // --- [V3.10] 掃描邏輯 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -544,7 +549,7 @@
         }
     }
 
-    // [新增] V3.9 繪製四角 L 型括號 (極致精巧版: 10px)
+    // [新增] V3.10 繪製四角 L 型括號 (微型版: 12px)
     function drawDetectedCorners(points) {
         const canvas = document.getElementById('qr-canvas');
         const video = document.querySelector('#reader video');
@@ -562,7 +567,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         // 設定樣式 
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 4; // 線條稍微變細一點，配合小尺寸
         ctx.strokeStyle = "#00ff00"; 
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
@@ -570,8 +575,8 @@
         // 將點轉換為畫布座標
         const p = points.map(pt => ({ x: pt.x * scaleX, y: pt.y * scaleY }));
 
-        // [修改] 括號長度大幅縮小 (模擬 0.3CM 視覺感)
-        const bracketLen = 10; 
+        // [修改] 括號長度設定為 12px (約 0.3CM)
+        const bracketLen = 12; 
 
         ctx.beginPath();
 
@@ -623,7 +628,7 @@
             (decodedText, decodedResult) => {
                 currentDetectedCode = decodedText;
                 
-                // [V3.9] 呼叫智能 L 型括號繪製
+                // [V3.10] 呼叫智能 L 型括號繪製
                 if (decodedResult && decodedResult.result && decodedResult.result.points) {
                     drawDetectedCorners(decodedResult.result.points);
                 }
