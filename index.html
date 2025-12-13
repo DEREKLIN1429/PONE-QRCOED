@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.2 - 下拉選單版)</title>
+    <title>QR Code 智慧系統 (V3.3 - 優化版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -31,7 +31,7 @@
         .settings-icon { font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; transition: background 0.3s; }
         .settings-icon:hover { background: #e0e0e0; }
         
-        /* 相機區域樣式 */
+        /* --- [優化] 相機區域樣式 --- */
         #camera-wrapper { 
             width: 100%; max-width: 500px; margin: 0 auto 15px auto; 
             display: none; position: relative; overflow: hidden; border-radius: 8px;
@@ -39,15 +39,43 @@
         }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        #scan-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 4px solid #00ff00; box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 10; border-radius: 20px; pointer-events: none; display: none; }
+        /* 新增：掃描對準框 */
+        #scan-overlay { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 250px; height: 250px; 
+            /* 使用 box-shadow 建立遮罩效果 (四周變暗，中間透亮) */
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); 
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            z-index: 10; border-radius: 20px; pointer-events: none; display: none; 
+        }
+        /* 新增：四個角落的對準標記 */
+        #scan-overlay::before, #scan-overlay::after {
+            content: ''; position: absolute; width: 20px; height: 20px; border-color: #00ff00; border-style: solid;
+        }
+        #scan-overlay::before { top: 0; left: 0; border-width: 4px 0 0 4px; }
+        #scan-overlay::after { bottom: 0; right: 0; border-width: 0 4px 4px 0; }
+        
+        /* 新增：掃描線動畫 */
+        .scan-line {
+            width: 100%; height: 2px; background: #ff0000; 
+            box-shadow: 0 0 4px #ff0000;
+            position: absolute; top: 0;
+            animation: scanMove 2s infinite linear;
+        }
+        @keyframes scanMove {
+            0% { top: 10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 90%; opacity: 0; }
+        }
         
         .camera-hint { 
-            position: absolute; bottom: 0; left: 0; right: 0; top: 0;
+            position: absolute; bottom: 10px; left: 0; right: 0;
             display: flex; justify-content: center; align-items: center;
             color: white; text-align: center; font-weight: bold; 
-            text-shadow: 1px 1px 4px black; z-index: 20; pointer-events: none; 
-            font-size: 18px; background: rgba(0,0,0,0.3);
-            flex-direction: column;
+            text-shadow: 1px 1px 2px black; z-index: 20; pointer-events: none; 
+            font-size: 16px; 
             white-space: pre-line;
         }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
@@ -151,7 +179,9 @@
         </div>
         
         <div id="camera-wrapper" onclick="handleCameraClick()">
-            <div id="scan-overlay"></div>
+            <div id="scan-overlay">
+                <div class="scan-line"></div>
+            </div>
             <div id="reader"></div>
             <div id="cam-hint-text" class="camera-hint">👆 點擊畫面開始掃描</div>
         </div>
@@ -205,7 +235,8 @@
                 <input type="file" id="logo-upload-input" accept="image/*" onchange="handleLogoUpload(this)" style="display:none;">
                 <div class="logo-preview-container">
                     <img id="logo-preview" src="" alt="Logo Preview">
-                    <br>
+                    
+
                     <button id="btn-remove-logo" class="btn-remove-logo" onclick="removeCenterLogo()">❌ 移除貼圖</button>
                 </div>
             </div>
@@ -263,7 +294,8 @@
             <div class="settings-info-title">📖 使用說明</div>
             1. 請選擇 <b>部門/資料來源</b> (自動帶入網址)。<br>
             2. 或在下方欄位手動 <b>輸入/更新</b> 連結。<br>
-            3. 確認欄位代號正確後點擊匯入。
+            3. 確認欄位代號正確後點擊匯入。<br>
+            <span style="color:red; font-size:12px;">* 已支援 CSV 逗號格式 (例如："台北, 信義")</span>
         </div>
 
         <div class="form-group">
@@ -373,13 +405,11 @@
         document.getElementById('googleSheetModal').style.display = "block";
     }
 
-    // 當下拉選單改變時，更新輸入框的值
     function updateGsUrl(selectedValue) {
         const input = document.getElementById('gs-url');
         if (selectedValue) {
             input.value = selectedValue;
         } else {
-            // 如果選到「自訂」，清空欄位讓使用者輸入
             input.value = "";
             input.focus();
         }
@@ -392,6 +422,21 @@
             column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
         }
         return column - 1;
+    }
+
+    // [修正] CSV Regex 解析函式
+    function parseCSVLine(text) {
+        // 正規表達式處理 CSV 引號與逗號
+        const re = /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^,'"\s\\]*(?:\s+[^,'"\s\\]+)*))\s*(?:,|$)/g;
+        const a = [];
+        text.replace(re, function(m0, m1, m2, m3) {
+            if (m1 !== undefined) a.push(m1.replace(/\\'/g, "'"));
+            else if (m2 !== undefined) a.push(m2.replace(/\\"/g, '"'));
+            else if (m3 !== undefined) a.push(m3);
+            return '';
+        });
+        if (/,\s*$/.test(text)) a.push('');
+        return a;
     }
 
     async function importFromGoogleSheet() {
@@ -435,10 +480,11 @@
                 if (currentRowNum < startRow) continue;
                 if (currentRowNum > endRow) break;
 
-                let cells = rows[i].split(","); 
+                // [修正] 使用新的解析器取代 .split(",")
+                let cells = parseCSVLine(rows[i]); 
                 
                 if (cells.length > targetColIndex) {
-                    let cellData = cells[targetColIndex].replace(/^"|"$/g, '').trim();
+                    let cellData = cells[targetColIndex].trim();
                     if (cellData) {
                         importedData.push(cellData);
                     }
@@ -451,6 +497,8 @@
                 return;
             }
 
+            // 用換行符號合併後傳入，這會再被 fillData 拆解
+            // 注意：如果資料本身含換行，可能會影響，但這邊先以資料格為單位
             fillData(importedData.join("\n"), false);
 
             alert(`✅ 成功匯入 ${importedData.length} 筆資料！`);
@@ -650,11 +698,11 @@
         });
     }
 
-    // --- 優化版：高畫質 QR 生成函式 (V3.0) ---
+    // --- [修正] 優化版：高畫質 QR 生成函式 (V3.3) ---
+    // 使用 Polling (setInterval) 取代固定的 setTimeout，解決競態條件問題
     function generateHighResQR(text) {
         return new Promise((resolve) => {
             const tempDiv = document.createElement('div');
-            // 將元素加入隱藏容器，確保瀏覽器渲染
             const hiddenContainer = document.getElementById('hidden-canvas-container') || document.body;
             hiddenContainer.appendChild(tempDiv);
             
@@ -670,30 +718,43 @@
                     correctLevel : QRCode.CorrectLevel.H
                 });
                 
-                // 稍微增加等待時間，確保渲染完成
-                setTimeout(async () => {
-                    let canvas = tempDiv.querySelector('canvas');
-                    let resultData = null;
-
-                    if (canvas) {
-                        if (centerLogoData) {
-                            let composite = await generateCompositeCanvas(canvas, centerLogoData);
-                            resultData = composite.toDataURL('image/png');
-                        } else {
-                            resultData = canvas.toDataURL('image/png');
-                        }
-                    } else {
-                        let img = tempDiv.querySelector('img');
-                        resultData = img ? img.src : null;
-                    }
-
-                    // 清理
-                    if (tempDiv.parentNode) {
-                        tempDiv.parentNode.removeChild(tempDiv);
-                    }
+                // 改用輪詢機制檢查
+                let attempts = 0;
+                const maxAttempts = 40; // 40 * 50ms = 2秒逾時
+                
+                const checkInterval = setInterval(async () => {
+                    attempts++;
+                    const canvas = tempDiv.querySelector('canvas');
+                    const img = tempDiv.querySelector('img');
                     
-                    resolve(resultData);
-                }, 100); 
+                    // 檢查 Canvas 是否存在且寬度大於 0 (表示已繪製)
+                    // 或者是 img 標籤且已載入
+                    const isReady = (canvas && canvas.width > 0) || (img && img.src && img.complete && img.naturalWidth > 0);
+
+                    if (isReady) {
+                        clearInterval(checkInterval);
+                        
+                        let resultData = null;
+                        if (canvas) {
+                            if (centerLogoData) {
+                                let composite = await generateCompositeCanvas(canvas, centerLogoData);
+                                resultData = composite.toDataURL('image/png');
+                            } else {
+                                resultData = canvas.toDataURL('image/png');
+                            }
+                        } else if (img) {
+                            resultData = img.src;
+                        }
+
+                        // 清理
+                        if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+                        resolve(resultData);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+                        resolve(null); // 超時回傳 null
+                    }
+                }, 50); // 每 50ms 檢查一次
 
             } catch(e) { 
                 if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
@@ -712,7 +773,6 @@
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
             if (val !== "") {
-                // 利用高畫質生成邏輯
                 let dataUrl = await generateHighResQR(val);
                 
                 if (dataUrl) {
