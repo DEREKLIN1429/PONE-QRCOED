@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.12 - 多語言完整版)</title>
+    <title>QR Code 智慧系統 (V3.13 - 中心對焦版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -43,7 +43,21 @@
         }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        /* 動態追蹤畫布 - 唯一的覆蓋層 */
+        /* [V3.13] 中心紅色對焦小框 */
+        #center-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 0, 0, 0.8); /* 紅色邊框 */
+            z-index: 15; /* 在 video 上方，但在 canvas 下方 */
+            pointer-events: none;
+            box-shadow: 0 0 2px rgba(0,0,0,0.5); /* 輕微陰影增加對比 */
+        }
+
+        /* 動態追蹤畫布 - 最上層覆蓋 */
         #qr-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -161,6 +175,9 @@
         
         <div id="camera-wrapper" onclick="handleCameraClick()">
             <canvas id="qr-canvas"></canvas>
+            
+            <div id="center-guide"></div>
+
             <div id="reader"></div>
             <div id="cam-hint-text" class="camera-hint" data-i18n="camHint">👆 點擊畫面開始掃描</div>
         </div>
@@ -317,7 +334,7 @@
 </div>
 
 <div id="hidden-canvas-container"></div>
-<div class="author-info" data-i18n="authorInfo">Author: DEREK LIN _ V3.12</div>
+<div class="author-info" data-i18n="authorInfo">Author: DEREK LIN _ V3.13</div>
 
 <script>
     const translations = {
@@ -331,7 +348,7 @@
             alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
             statusCam: "相機就緒，請點擊畫面...", statusDone: "✅ 完成",
             statusExcel: "⏳ 正在產生客製化 Excel...", statusExcelDone: "✅ 下載完成！",
-            authorInfo: "Author: DEREK LIN _ V3.12",
+            authorInfo: "Author: DEREK LIN _ V3.13",
             
             // Camera States
             camScanning: "👀 掃描中... 請將 QR Code 對準畫面",
@@ -354,7 +371,7 @@
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
             statusCam: "Camera ready, tap to scan...", statusDone: "✅ Done",
             statusExcel: "⏳ Generating Excel...", statusExcelDone: "✅ Download Complete!",
-            authorInfo: "Author: DEREK LIN _ V3.12",
+            authorInfo: "Author: DEREK LIN _ V3.13",
 
             // Camera States
             camScanning: "👀 Scanning... Align QR Code",
