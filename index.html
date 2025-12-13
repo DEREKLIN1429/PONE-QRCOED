@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V2.1 - ZT410R 專用版)</title>
+    <title>QR Code 智慧系統 (V2.2 - 精確尺寸版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -19,7 +19,7 @@
         }
         body { font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; background-color: var(--bg-color); padding: 10px; margin: 0; padding-bottom: 40px; }
         
-        /* 版面配置 - 改為單欄式 */
+        /* 版面配置 - 單欄式 */
         .main-layout { max-width: 1200px; margin: 0 auto; }
         
         /* 頂部 Header */
@@ -119,7 +119,7 @@
         .btn-save { background-color: #28a745; font-size: 16px; } 
         .btn-cancel { background-color: #6c757d; font-size: 16px; }
 
-        /* 新增：設定頁面中的說明區塊 */
+        /* 設定頁面中的說明區塊 */
         .settings-info-section {
             background-color: #e9ecef; padding: 15px; border-radius: 6px; 
             font-size: 13px; color: #333; line-height: 1.6; margin-top: 20px;
@@ -174,7 +174,7 @@
             <div style="display:flex; gap:10px; margin-bottom:5px;">
                 <div style="flex:1;">
                     <label style="font-size:12px; color:#666;">資料欄寬 (B,D,F,H)</label>
-                    <input type="number" id="set-excel-width" step="0.01" placeholder="7">
+                    <input type="number" id="set-excel-width" step="0.01" placeholder="7.57">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:12px; color:#999;">分隔欄寬 (固定)</label>
@@ -184,7 +184,7 @@
             <div style="display:flex; gap:10px;">
                 <div style="flex:1;">
                     <label style="font-size:12px; color:#666;">圖片列高 (A2,A5...)</label>
-                    <input type="number" id="set-excel-height" step="0.01" placeholder="42.75">
+                    <input type="number" id="set-excel-height" step="0.01" placeholder="51.75">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:12px; color:#666;">分隔列高 (A1,A4...)</label>
@@ -227,7 +227,8 @@
             <b>列印區域邊界 (此系統設定)：</b><br>
             • 左 (Left): 0.39 / 其他皆為 0<br><br>
             <b>Excel 格式 (4欄)：</b><br>
-            • 資料欄寬 7 / 圖片列高 42.75<br>
+            • 資料欄寬 7.57 / 圖片列高 51.75<br>
+            • 圖形尺寸：1.8CM(高) x 1.55CM(寬)<br>
             • 分隔欄強制為 1<br>
         </div>
 
@@ -290,10 +291,10 @@
         currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
         excelFontSize: 5,           
-        printMargins: { left: 0.39, right: 0, top: 0, bottom: 0 }, // V2.1 預設邊界
-        excelColWidth: 7,          
+        printMargins: { left: 0.39, right: 0, top: 0, bottom: 0 }, // V2.1 Default
+        excelColWidth: 7.57,        // V2.2 Default (~1.55cm)
         excelSpacerColWidth: 1,     
-        excelRowHeight: 42.75,     
+        excelRowHeight: 51.75,      // V2.2 Default (~1.8cm)
         excelSpacerRowHeight: 15   
     };
 
@@ -646,7 +647,8 @@
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex);
                 textCell.value = val;
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; 
-                textCell.font = { size: appConfig.excelFontSize, bold: true, name: 'Arial' };
+                // V1.9: Font Size 5
+                textCell.font = { size: 5, bold: true, name: 'Arial' };
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex);
                 imgCell.border = { top: {style:'medium'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'none'} };
                 textCell.border = { top: {style:'none'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'medium'} };
@@ -830,8 +832,8 @@
             top: parseFloat(document.getElementById('set-margin-top').value) || 0,
             bottom: parseFloat(document.getElementById('set-margin-bottom').value) || 0
         };
-        appConfig.excelColWidth = parseFloat(document.getElementById('set-excel-width').value) || 7;
-        appConfig.excelRowHeight = parseFloat(document.getElementById('set-excel-height').value) || 42.75;
+        appConfig.excelColWidth = parseFloat(document.getElementById('set-excel-width').value) || 7.57;
+        appConfig.excelRowHeight = parseFloat(document.getElementById('set-excel-height').value) || 51.75;
         appConfig.excelSpacerRowHeight = parseFloat(document.getElementById('set-spacer-height').value) || 15;
 
         localStorage.setItem('qrAppConfig', JSON.stringify(appConfig));
@@ -859,9 +861,9 @@
             appConfig.availableLangs = parsed.availableLangs;
             if(parsed.printMargins) appConfig.printMargins = parsed.printMargins;
             
-            appConfig.excelColWidth = parsed.excelColWidth || 7;
+            appConfig.excelColWidth = parsed.excelColWidth || 7.57;
             appConfig.excelSpacerColWidth = 1; 
-            appConfig.excelRowHeight = parsed.excelRowHeight || 42.75;
+            appConfig.excelRowHeight = parsed.excelRowHeight || 51.75;
             appConfig.excelSpacerRowHeight = parsed.excelSpacerRowHeight || 15;
         }
     }
