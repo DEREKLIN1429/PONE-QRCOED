@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V2.0 - 掃描修復版)</title>
+    <title>QR Code 智慧系統 (V2.1 - ZT410R 專用版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -19,22 +19,13 @@
         }
         body { font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; background-color: var(--bg-color); padding: 10px; margin: 0; padding-bottom: 40px; }
         
-        /* 版面配置 */
-        .main-layout { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-        .left-column { flex: 1; min-width: 300px; width: 100%; }
-        .right-column { width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 20px; height: fit-content; }
+        /* 版面配置 - 改為單欄式 */
+        .main-layout { max-width: 1200px; margin: 0 auto; }
         
-        @media (max-width: 900px) {
-            .main-layout { flex-direction: column; }
-            .right-column { width: 100%; box-sizing: border-box; position: static; order: 2; }
-            .left-column { order: 1; }
-        }
-
         /* 頂部 Header */
         header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .header-top-row { width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 10px; }
-        h2 { color: #333; margin: 0 0 10px 0; font-size: 1.5rem; text-align: center; width: 100%; line-height: 1.4; }
-        .sub-hint { font-size: 13px; color: #666; margin-bottom: 15px; background: #fff3cd; padding: 5px 10px; border-radius: 4px; border: 1px solid #ffeeba; }
+        h2 { color: #333; margin: 0 0 15px 0; font-size: 1.8rem; text-align: center; width: 100%; line-height: 1.4; }
         
         .lang-select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background: #fff; }
         .settings-icon { font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; transition: background 0.3s; }
@@ -96,13 +87,9 @@
         
         .qr-text-info { font-size: 13px; color: #333; word-break: break-all; background: #eef; padding: 4px; border-radius: 4px; width: 100%; min-height: 18px; text-align: center; }
 
-        /* 說明區塊 */
-        .print-settings-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
-        .info-box { background: #e8f4fd; padding: 10px; border-radius: 5px; font-size: 14px; color: #004085; line-height: 1.5; margin-bottom: 15px; }
-
-        /* Modal 彈窗 */
+        /* 設定 Modal 樣式 */
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background-color: #fefefe; margin: 3% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 8px; text-align: left; max-height: 90vh; overflow-y: auto; }
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
@@ -117,86 +104,63 @@
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
-            margin-top: 25px;
+            margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #eee;
         }
 
         .btn-big-action {
-            width: 100%;
-            height: 50px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.2s;
+            width: 100%; height: 50px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 16px; font-weight: bold; color: white;
+            display: flex; align-items: center; justify-content: center; transition: opacity 0.2s;
         }
         .btn-big-action:active { opacity: 0.8; transform: scale(0.98); }
         .btn-reset { background-color: #dc3545; font-size: 14px; } 
         .btn-save { background-color: #28a745; font-size: 16px; } 
         .btn-cancel { background-color: #6c757d; font-size: 16px; }
 
+        /* 新增：設定頁面中的說明區塊 */
+        .settings-info-section {
+            background-color: #e9ecef; padding: 15px; border-radius: 6px; 
+            font-size: 13px; color: #333; line-height: 1.6; margin-top: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .settings-info-title { font-weight: bold; font-size: 15px; margin-bottom: 8px; color: #007bff; }
+
         .author-info { position: fixed; bottom: 0; left: 0; right: 0; background-color: #333; color: #fff; text-align: center; padding: 8px; font-size: 14px; letter-spacing: 1px; z-index: 900; }
-        
         #hidden-canvas-container { display: none; }
     </style>
 </head>
 <body>
 
 <div class="main-layout">
-    <div class="left-column">
-        <header>
-            <div class="header-top-row">
-                <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)"></select>
-                <div class="settings-icon" onclick="openSettings()" title="Settings">⚙️</div>
-            </div>
-            <h2 id="app-title" data-i18n="appTitle">QR Code 智慧系統</h2>
-            <div class="sub-hint">💡 提示：若希望<b>手機掃描後顯示圖片</b>，請在輸入框內填入<b>圖片的網址 (URL)</b>。</div>
-
-            <div class="batch-input-container">
-                <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料或 URL (Enter 可確定)..." data-i18n-ph="batchPlace">
-                <button class="btn-batch-add" onclick="processBatchInput()" data-i18n="btnAdd">⬇️ 加入</button>
-            </div>
-            
-            <div id="camera-wrapper" onclick="handleCameraClick()">
-                <div id="scan-overlay"></div>
-                <div id="reader"></div>
-                <div id="cam-hint-text" class="camera-hint">👆 點擊畫面開始掃描</div>
-            </div>
-            
-            <div id="ocr-status"></div>
-            <div class="btn-group">
-                <button class="btn-scan" onclick="initCameraWrapper()"><span class="icon">📸</span><span data-i18n="btnScan">啟用掃描器</span></button>
-                <button class="btn-img-export" onclick="openImgExportModal()"><span class="icon">🖼️</span><span data-i18n="btnImgExport">轉出圖片</span></button>
-                <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出客製化 EXCEL</span></button>
-                <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span></button>
-            </div>
-        </header>
-        <div class="grid-container" id="main-grid"></div>
-    </div>
-
-    <div class="right-column">
-        <div class="print-settings-title" data-i18n="printSettings">🖨️ 客製化輸出說明</div>
-        <div class="info-box">
-            此模式為 <b>掃描修復版 V2.0</b>。<br><br>
-            <b>📸 掃描步驟：</b><br>
-            1. 點擊黑畫面 → 啟動鏡頭<br>
-            2. 對準 QR Code (出現黃色字)<br>
-            3. <b>再次點擊畫面</b> → 確認抓取<br>
-            4. 按下確定 → 資料帶入並<b>關閉鏡頭</b><br><br>
-            <b>📏 Excel 版面調整 (4欄式)：</b><br>
-            • 資料欄 (B,D,F,H)：寬 <b>7</b> (約 1.5cm)<br>
-            • 分隔欄 (A,C,E,G,I)：<b>強制為 1</b><br>
-            • 圖片列 (A2,A5...)：高 <b>42.75</b> (約 1.5cm)<br>
-            • 分隔列 (A1,A4...)：高 <b>15</b><br>
-            • 字體大小：<b>5</b><br>
+    <header>
+        <div class="header-top-row">
+            <select id="main-lang-select" class="lang-select" onchange="changeLanguage(this.value)"></select>
+            <div class="settings-icon" onclick="openSettings()" title="Settings">⚙️</div>
         </div>
-    </div>
+        <h2 id="app-title" data-i18n="appTitle">QR Code 智慧系統</h2>
+        
+        <div class="batch-input-container">
+            <input type="text" id="batch-input" class="batch-input" placeholder="快速輸入資料或 URL (Enter 可確定)..." data-i18n-ph="batchPlace">
+            <button class="btn-batch-add" onclick="processBatchInput()" data-i18n="btnAdd">⬇️ 加入</button>
+        </div>
+        
+        <div id="camera-wrapper" onclick="handleCameraClick()">
+            <div id="scan-overlay"></div>
+            <div id="reader"></div>
+            <div id="cam-hint-text" class="camera-hint">👆 點擊畫面開始掃描</div>
+        </div>
+        
+        <div id="ocr-status"></div>
+        <div class="btn-group">
+            <button class="btn-scan" onclick="initCameraWrapper()"><span class="icon">📸</span><span data-i18n="btnScan">啟用掃描器</span></button>
+            <button class="btn-img-export" onclick="openImgExportModal()"><span class="icon">🖼️</span><span data-i18n="btnImgExport">轉出圖片</span></button>
+            <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出客製化 EXCEL</span></button>
+            <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span></button>
+        </div>
+    </header>
+    <div class="grid-container" id="main-grid"></div>
 </div>
 
 <div id="settingsModal" class="modal">
@@ -213,8 +177,8 @@
                     <input type="number" id="set-excel-width" step="0.01" placeholder="7">
                 </div>
                 <div style="flex:1;">
-                    <label style="font-size:12px; color:#999;">分隔欄寬</label>
-                    <input type="text" value="1 (Fixed)" disabled style="background:#eee; color:#666;">
+                    <label style="font-size:12px; color:#999;">分隔欄寬 (固定)</label>
+                    <input type="text" value="1" disabled style="background:#eee; color:#666;">
                 </div>
             </div>
             <div style="display:flex; gap:10px;">
@@ -252,6 +216,21 @@
             </div>
         </div>
 
+        <div class="settings-info-section">
+            <div class="settings-info-title">🖨️ 客製化輸出說明 (ZT410R)</div>
+            <b>預設印表機：</b> ZDesigner ZT410R 203dpi ZPL<br>
+            <b>建議紙張設定：</b><br>
+            • 寬度 (Width): 4.49 英吋<br>
+            • 高度 (Height): 7.5 英吋<br>
+            • 列印速度 (Speed): 3<br>
+            • 列印濃度 (Darkness): 15<br><br>
+            <b>列印區域邊界 (此系統設定)：</b><br>
+            • 左 (Left): 0.39 / 其他皆為 0<br><br>
+            <b>Excel 格式 (4欄)：</b><br>
+            • 資料欄寬 7 / 圖片列高 42.75<br>
+            • 分隔欄強制為 1<br>
+        </div>
+
         <div class="modal-footer-grid">
             <button onclick="resetSettings()" class="btn-big-action btn-reset">⚠️ 恢復原廠</button>
             <button onclick="saveSettings()" class="btn-big-action btn-save" data-i18n="btnSave">儲存</button>
@@ -286,7 +265,6 @@
             camHint: "👆 點擊畫面開始掃描",
             btnScan: "啟用掃描器", btnImgExport: "轉出圖片", btnClear: "清除全部", btnExcel: "轉出客製化 EXCEL",
             btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料或 URL...",
-            printSettings: "🖨️ 客製化輸出說明",
             settingsTitle: "系統設定", lblAppTitle: "主標題名稱：", lblGridCount: "總格數設定：",
             btnSave: "儲存", btnCancel: "取消", gridLabel: "格位 ", gridPlace: "待輸入...",
             alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
@@ -298,7 +276,6 @@
             camHint: "👆 Tap here to scan",
             btnScan: "Enable Scanner", btnImgExport: "Export Images", btnClear: "Clear All", btnExcel: "Export Custom Excel",
             btnAdd: "⬇️ Add", batchPlace: "Quick input or URL...",
-            printSettings: "🖨️ Custom Export Info",
             settingsTitle: "System Settings", lblAppTitle: "App Title:", lblGridCount: "Grid Count:",
             btnSave: "Save", btnCancel: "Cancel", gridLabel: "Slot ", gridPlace: "Waiting...",
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
@@ -313,7 +290,7 @@
         currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
         excelFontSize: 5,           
-        printMargins: { left: 0.1, right: 0, top: 0, bottom: 0 },
+        printMargins: { left: 0.39, right: 0, top: 0, bottom: 0 }, // V2.1 預設邊界
         excelColWidth: 7,          
         excelSpacerColWidth: 1,     
         excelRowHeight: 42.75,     
@@ -321,7 +298,7 @@
     };
 
     let centerLogoData = null; 
-    let html5QrCode = null; // 初始化為 null
+    let html5QrCode = null; 
     let isScanning = false;
     let currentDetectedCode = null;
 
@@ -378,14 +355,13 @@
         }
     }
 
-    // --- 4. 掃描邏輯 (修正版 V2.0) ---
+    // --- 4. 掃描邏輯 (V2.0/V2.1 邏輯相同) ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
         wrapper.style.display = "block";
         hint.innerText = translations[appConfig.currentLang].camHint;
         hint.style.color = "white";
-        // 確保重置時停止
         if (html5QrCode) {
             stopScan().then(() => {
                 isScanning = false;
@@ -394,13 +370,10 @@
         }
     }
 
-    // 處理點擊事件：切換掃描狀態
     function handleCameraClick() {
         if (!isScanning) {
-            // 1. 若未掃描 -> 啟動
             startScan();
         } else {
-            // 2. 若正在掃描 -> 執行抓取
             captureScan();
         }
     }
@@ -413,7 +386,6 @@
         wrapper.style.display = "block";
         currentDetectedCode = null;
 
-        // 若實例不存在則建立
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
         }
@@ -422,14 +394,11 @@
         
         html5QrCode.start({ facingMode: "environment" }, config, 
             (decodedText) => {
-                // 掃描成功回呼
                 currentDetectedCode = decodedText;
                 hint.innerText = `🔍 已偵測：\n${decodedText}\n(點擊畫面確認)`;
-                hint.style.color = "#ffff00"; // 黃色提示
+                hint.style.color = "#ffff00"; 
             },
-            (errorMessage) => { 
-                // 掃描中無動作
-            }
+            (errorMessage) => { }
         ).then(() => {
             isScanning = true;
             overlay.style.display = "block";
@@ -444,20 +413,13 @@
     }
 
     function captureScan() {
-        // 如果還沒偵測到資料
         if (!currentDetectedCode) {
             return;
         }
-
-        // 3. 出現存取訊息
         if (confirm(`Data Detected: \n${currentDetectedCode}\n\nAdd to list?`)) {
-            // 4. 按下確認，帶入資料
             fillData(currentDetectedCode, false);
-            
-            // 5. 畫面停止 (停止相機)
             stopScan(true);
         } else {
-            // 取消，繼續掃描
             currentDetectedCode = null;
             document.getElementById('cam-hint-text').innerText = "👀 掃描中... 點擊畫面抓取";
             document.getElementById('cam-hint-text').style.color = "white";
@@ -484,7 +446,6 @@
             }
             
             currentDetectedCode = null;
-            // 徹底清理，避免佔用
             html5QrCode.clear();
         }).catch(err => {
             console.log("Stop failed", err);
@@ -492,7 +453,7 @@
         });
     }
 
-    // --- 5. 圖片/檔案 功能 (已移除上傳按鈕) ---
+    // --- 5. 圖片/檔案 功能 ---
     function clearSlot(index) {
         const textInput = document.getElementById('data-' + index);
         const container = document.getElementById('code-img-' + index);
@@ -597,7 +558,7 @@
         }
     }
 
-    // --- 6. Excel 匯出 (4欄位版 V1.9) ---
+    // --- 6. Excel 匯出 (4欄位版) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -616,7 +577,7 @@
             margins: { top: appConfig.printMargins.top, bottom: appConfig.printMargins.bottom, left: appConfig.printMargins.left, right: appConfig.printMargins.right, header: 0, footer: 0 }
         };
         
-        // V1.9 定義：分隔欄強制為 1
+        // V2.1: 分隔欄強制為 1
         const colW = appConfig.excelColWidth;       
         const spcW = 1; 
         
@@ -685,8 +646,7 @@
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex);
                 textCell.value = val;
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; 
-                // V1.9: Font Size 5
-                textCell.font = { size: 5, bold: true, name: 'Arial' };
+                textCell.font = { size: appConfig.excelFontSize, bold: true, name: 'Arial' };
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex);
                 imgCell.border = { top: {style:'medium'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'none'} };
                 textCell.border = { top: {style:'none'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'medium'} };
@@ -694,7 +654,7 @@
         }
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QR_System_V1.9_Fixed.xlsx");
+        saveAs(blob, "QR_System_ZT410R.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
@@ -757,8 +717,6 @@
             input.placeholder = t.gridPlace || "Waiting...";
             input.onkeyup = function() { debouncedGenerate(i); };
             
-            // V1.9: 移除上傳按鈕
-
             inputGroup.appendChild(input);
             let codeDiv = document.createElement('div');
             codeDiv.id = 'code-container-' + i; codeDiv.className = 'code-display-area';
@@ -851,7 +809,6 @@
         document.getElementById('set-margin-bottom').value = appConfig.printMargins.bottom;
         
         document.getElementById('set-excel-width').value = appConfig.excelColWidth;
-        // set-spacer-width is disabled/readonly
         document.getElementById('set-excel-height').value = appConfig.excelRowHeight;
         document.getElementById('set-spacer-height').value = appConfig.excelSpacerRowHeight;
 
@@ -874,7 +831,6 @@
             bottom: parseFloat(document.getElementById('set-margin-bottom').value) || 0
         };
         appConfig.excelColWidth = parseFloat(document.getElementById('set-excel-width').value) || 7;
-        // Spacer Width is hardcoded to 1, no need to save from input
         appConfig.excelRowHeight = parseFloat(document.getElementById('set-excel-height').value) || 42.75;
         appConfig.excelSpacerRowHeight = parseFloat(document.getElementById('set-spacer-height').value) || 15;
 
@@ -904,7 +860,7 @@
             if(parsed.printMargins) appConfig.printMargins = parsed.printMargins;
             
             appConfig.excelColWidth = parsed.excelColWidth || 7;
-            appConfig.excelSpacerColWidth = 1; // Force reset to 1 on load
+            appConfig.excelSpacerColWidth = 1; 
             appConfig.excelRowHeight = parsed.excelRowHeight || 42.75;
             appConfig.excelSpacerRowHeight = parsed.excelSpacerRowHeight || 15;
         }
