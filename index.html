@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V1.9 - 簡潔精確版)</title>
+    <title>QR Code 智慧系統 (V2.0 - 掃描修復版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -46,8 +46,10 @@
             display: none; position: relative; overflow: hidden; border-radius: 8px;
             cursor: pointer; background: #000; min-height: 250px;
         }
-        #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; }
+        #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
+        
         #scan-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 4px solid #00ff00; box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 10; border-radius: 20px; pointer-events: none; display: none; }
+        
         .camera-hint { 
             position: absolute; bottom: 0; left: 0; right: 0; top: 0;
             display: flex; justify-content: center; align-items: center;
@@ -55,6 +57,7 @@
             text-shadow: 1px 1px 4px black; z-index: 20; pointer-events: none; 
             font-size: 18px; background: rgba(0,0,0,0.3);
             flex-direction: column;
+            white-space: pre-line;
         }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
@@ -87,8 +90,6 @@
         .grid-input { flex: 1; min-width: 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-weight: bold; color: #333; text-align: center; background-color: #fafafa; }
         .grid-input:focus { border-color: #007bff; background-color: #fff; }
         
-        /* 移除上傳按鈕樣式 */
-
         .code-display-area { width: 100%; height: 120px; background-color: #fff; display: flex; justify-content: center; align-items: center; margin-bottom: 5px; border: 1px dashed #ddd; overflow: hidden; position: relative; transition: border-color 0.2s; }
         .code-display-area:hover { border-color: #007bff; border-style: solid; } 
         .code-display-area img, .code-display-area canvas { max-width: 95% !important; max-height: 95% !important; display: block; object-fit: contain; }
@@ -182,16 +183,18 @@
     <div class="right-column">
         <div class="print-settings-title" data-i18n="printSettings">🖨️ 客製化輸出說明</div>
         <div class="info-box">
-            此模式為 <b>簡潔精確版 V1.9</b>。<br><br>
+            此模式為 <b>掃描修復版 V2.0</b>。<br><br>
+            <b>📸 掃描步驟：</b><br>
+            1. 點擊黑畫面 → 啟動鏡頭<br>
+            2. 對準 QR Code (出現黃色字)<br>
+            3. <b>再次點擊畫面</b> → 確認抓取<br>
+            4. 按下確定 → 資料帶入並<b>關閉鏡頭</b><br><br>
             <b>📏 Excel 版面調整 (4欄式)：</b><br>
             • 資料欄 (B,D,F,H)：寬 <b>7</b> (約 1.5cm)<br>
             • 分隔欄 (A,C,E,G,I)：<b>強制為 1</b><br>
             • 圖片列 (A2,A5...)：高 <b>42.75</b> (約 1.5cm)<br>
             • 分隔列 (A1,A4...)：高 <b>15</b><br>
             • 字體大小：<b>5</b><br>
-            <span style="font-size:12px; color:#666;">(部分參數可於設定中調整)</span><br><br>
-            <b>🎨 中心貼圖：</b><br>
-            至【系統設定 ⚙️】上傳圖片，即可生成專屬圖形 QR Code。<br>
         </div>
     </div>
 </div>
@@ -277,7 +280,6 @@
 <div class="author-info">Author: DEREK LIN</div>
 
 <script>
-    // --- 1. 設定與參數 ---
     const translations = {
         "zh-TW": {
             appTitle: "QR Code 智慧系統",
@@ -310,17 +312,16 @@
         gridCount: 20, 
         currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
-        excelFontSize: 5,           // V1.9: Default 5
+        excelFontSize: 5,           
         printMargins: { left: 0.1, right: 0, top: 0, bottom: 0 },
-        // 預設參數 (V1.9)
         excelColWidth: 7,          
-        excelSpacerColWidth: 1,     // V1.9: Default 1
+        excelSpacerColWidth: 1,     
         excelRowHeight: 42.75,     
         excelSpacerRowHeight: 15   
     };
 
     let centerLogoData = null; 
-    let html5QrCode;
+    let html5QrCode = null; // 初始化為 null
     let isScanning = false;
     let currentDetectedCode = null;
 
@@ -377,57 +378,86 @@
         }
     }
 
-    // --- 4. 掃描邏輯 ---
+    // --- 4. 掃描邏輯 (修正版 V2.0) ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
         wrapper.style.display = "block";
         hint.innerText = translations[appConfig.currentLang].camHint;
         hint.style.color = "white";
+        // 確保重置時停止
         if (html5QrCode) {
-            html5QrCode.clear().then(() => { html5QrCode = null; isScanning = false; }).catch(err => { html5QrCode = null; });
+            stopScan().then(() => {
+                isScanning = false;
+                currentDetectedCode = null;
+            });
         }
-        isScanning = false;
-        currentDetectedCode = null;
     }
 
+    // 處理點擊事件：切換掃描狀態
     function handleCameraClick() {
-        if (!isScanning) startScan(); else captureScan();
+        if (!isScanning) {
+            // 1. 若未掃描 -> 啟動
+            startScan();
+        } else {
+            // 2. 若正在掃描 -> 執行抓取
+            captureScan();
+        }
     }
 
     function startScan() {
         const wrapper = document.getElementById('camera-wrapper');
         const overlay = document.getElementById('scan-overlay');
         const hint = document.getElementById('cam-hint-text');
+        
         wrapper.style.display = "block";
         currentDetectedCode = null;
-        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+        // 若實例不存在則建立
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         
         html5QrCode.start({ facingMode: "environment" }, config, 
             (decodedText) => {
+                // 掃描成功回呼
                 currentDetectedCode = decodedText;
-                hint.innerText = `🔍 已偵測：${decodedText}\n(點擊畫面確認)`;
-                hint.style.color = "#ffff00";
+                hint.innerText = `🔍 已偵測：\n${decodedText}\n(點擊畫面確認)`;
+                hint.style.color = "#ffff00"; // 黃色提示
             },
-            (errorMessage) => { }
+            (errorMessage) => { 
+                // 掃描中無動作
+            }
         ).then(() => {
             isScanning = true;
             overlay.style.display = "block";
             hint.style.display = "flex";
             hint.innerText = "👀 掃描中... 點擊畫面抓取";
+            hint.style.color = "white";
         }).catch(err => {
+            console.error(err);
             alert("Camera Error: " + err);
             isScanning = false;
         });
     }
 
     function captureScan() {
-        if (!currentDetectedCode) return;
+        // 如果還沒偵測到資料
+        if (!currentDetectedCode) {
+            return;
+        }
+
+        // 3. 出現存取訊息
         if (confirm(`Data Detected: \n${currentDetectedCode}\n\nAdd to list?`)) {
+            // 4. 按下確認，帶入資料
             fillData(currentDetectedCode, false);
+            
+            // 5. 畫面停止 (停止相機)
             stopScan(true);
         } else {
+            // 取消，繼續掃描
             currentDetectedCode = null;
             document.getElementById('cam-hint-text').innerText = "👀 掃描中... 點擊畫面抓取";
             document.getElementById('cam-hint-text').style.color = "white";
@@ -435,13 +465,16 @@
     }
 
     function stopScan(isSuccess = false) {
-        if (!html5QrCode || !isScanning) return;
-        html5QrCode.stop().then(() => {
+        if (!html5QrCode || !isScanning) return Promise.resolve();
+
+        return html5QrCode.stop().then(() => {
             isScanning = false;
             const overlay = document.getElementById('scan-overlay');
             const hint = document.getElementById('cam-hint-text');
+            
             overlay.style.display = "none";
             hint.style.display = "flex";
+            
             if (isSuccess) {
                 hint.innerText = "✅ 存取完成 (點擊可重新掃描)";
                 hint.style.color = "#00ff00";
@@ -449,12 +482,17 @@
                 hint.innerText = translations[appConfig.currentLang].camHint;
                 hint.style.color = "white";
             }
-            html5QrCode.clear(); 
+            
             currentDetectedCode = null;
-        }).catch(err => console.log(err));
+            // 徹底清理，避免佔用
+            html5QrCode.clear();
+        }).catch(err => {
+            console.log("Stop failed", err);
+            isScanning = false;
+        });
     }
 
-    // --- 5. 圖片/檔案 功能 (已精簡) ---
+    // --- 5. 圖片/檔案 功能 (已移除上傳按鈕) ---
     function clearSlot(index) {
         const textInput = document.getElementById('data-' + index);
         const container = document.getElementById('code-img-' + index);
@@ -580,7 +618,7 @@
         
         // V1.9 定義：分隔欄強制為 1
         const colW = appConfig.excelColWidth;       
-        const spcW = 1; // V1.9 Force Spacer Width
+        const spcW = 1; 
         
         worksheet.columns = [
             { width: spcW }, { width: colW }, { width: spcW }, { width: colW }, 
