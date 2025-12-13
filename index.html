@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.14 - 智慧變色取景版)</title>
+    <title>QR Code 智慧系統 (V3.15 - 智慧變色取景版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -164,7 +164,14 @@
 
         .author-info { position: fixed; bottom: 0; left: 0; right: 0; background-color: #333; color: #fff; text-align: center; padding: 8px; font-size: 14px; letter-spacing: 1px; z-index: 900; }
         
-        #hidden-canvas-container { display: none; }
+        /* [修正] 改用 visibility: hidden，避免手機版因為 display:none 無法正確繪製尺寸 */
+        #hidden-canvas-container { 
+            visibility: hidden; 
+            position: absolute; 
+            top: -9999px; 
+            left: -9999px; 
+            z-index: -1; 
+        }
     </style>
 </head>
 <body>
@@ -343,7 +350,7 @@
 </div>
 
 <div id="hidden-canvas-container"></div>
-<div class="author-info" data-i18n="authorInfo">Author: DEREK LIN _ V3.14</div>
+<div class="author-info" data-i18n="authorInfo">Author: DEREK LIN _ V3.15</div>
 
 <script>
     const translations = {
@@ -357,7 +364,7 @@
             alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
             statusCam: "相機就緒，請點擊畫面...", statusDone: "✅ 完成",
             statusExcel: "⏳ 正在產生客製化 Excel...", statusExcelDone: "✅ 下載完成！",
-            authorInfo: "Author: DEREK LIN _ V3.14",
+            authorInfo: "Author: DEREK LIN _ V3.15",
             
             // Camera States
             camScanning: "👀 掃描中... 請將 QR Code 對準畫面",
@@ -380,7 +387,7 @@
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
             statusCam: "Camera ready, tap to scan...", statusDone: "✅ Done",
             statusExcel: "⏳ Generating Excel...", statusExcelDone: "✅ Download Complete!",
-            authorInfo: "Author: DEREK LIN _ V3.14",
+            authorInfo: "Author: DEREK LIN _ V3.15",
 
             // Camera States
             camScanning: "👀 Scanning... Align QR Code",
@@ -401,10 +408,10 @@
         currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
         printMargins: { left: 0.39, right: 0, top: 0, bottom: 0 },
-        excelColWidth: 7.57,       
-        excelSpacerColWidth: 1,     
-        excelRowHeight: 51.75,      
-        excelSpacerRowHeight: 15    
+        excelColWidth: 7.57,        
+        excelSpacerColWidth: 1,      
+        excelRowHeight: 51.75,       
+        excelSpacerRowHeight: 15     
     };
 
     let centerLogoData = null; 
@@ -770,24 +777,42 @@
         container.innerHTML = ""; 
         document.getElementById('text-info-' + index).innerText = "";
     }
+
+    // [V3.15] 優化版：點擊時，自動生成適合聊天室 (250px) 的圖片並複製
     async function copyQrImage(index) {
-        const container = document.getElementById('code-img-' + index);
-        const canvas = container.querySelector('canvas');
-        const img = container.querySelector('img');
+        const inputEl = document.getElementById('data-' + index);
+        const val = inputEl.value.trim();
         const statusDiv = document.getElementById('ocr-status');
+
+        if (!val) return; 
+
         try {
-            let blob;
-            if (img && img.src) {
-                const res = await fetch(img.src);
-                blob = await res.blob();
-            } else if (canvas) {
-                blob = await new Promise(resolve => canvas.toBlob(resolve));
-            }
-            if (!blob) return;
-            await navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]);
-            statusDiv.innerText = "✅ 格位 " + index + " 圖片已複製！";
-            setTimeout(() => { if(statusDiv.innerText.includes("圖片已複製")) statusDiv.innerText = ""; }, 2000);
-        } catch (err) { alert("複製失敗：" + err); }
+            statusDiv.innerText = "⏳ 正在複製圖片 (適合聊天室)...";
+            
+            // 關鍵修改：這裡改成 250 (原本是 512)
+            // 250px 在手機聊天室大約佔據 1/3 ~ 1/2 寬度，最剛好
+            let dataUrl = await generateHighResQR(val, 250); 
+
+            if (!dataUrl) throw new Error("生成圖片失敗");
+
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+
+            await navigator.clipboard.write([ 
+                new ClipboardItem({ "image/png": blob }) 
+            ]);
+
+            statusDiv.innerText = "✅ 已複製！可直接貼到聊天室";
+            
+            setTimeout(() => { 
+                if(statusDiv.innerText.includes("已複製")) statusDiv.innerText = ""; 
+            }, 2000);
+
+        } catch (err) { 
+            console.error(err);
+            alert("複製失敗，請長按圖片手動儲存。\n錯誤：" + err.message);
+            statusDiv.innerText = "❌ 複製失敗";
+        }
     }
 
     function openImgExportModal() {
@@ -818,15 +843,20 @@
         });
     }
 
-    // --- 優化版：高畫質 QR 生成函式 ---
-    function generateHighResQR(text) {
+    // [V3.15] 優化版：高畫質 QR 生成函式 (支援手機尺寸修正)
+    function generateHighResQR(text, targetSize) {
         return new Promise((resolve) => {
             const tempDiv = document.createElement('div');
+            // 確保容器不受外部 CSS 影響，強制指定大小
+            const size = targetSize || 512; 
+            
+            tempDiv.style.width = size + "px";
+            tempDiv.style.height = size + "px";
+            tempDiv.style.position = "absolute"; // 脫離文檔流，避免被擠壓
+            
             const hiddenContainer = document.getElementById('hidden-canvas-container') || document.body;
             hiddenContainer.appendChild(tempDiv);
             
-            const size = 512; 
-
             try {
                 new QRCode(tempDiv, {
                     text: text,
@@ -845,6 +875,7 @@
                     const canvas = tempDiv.querySelector('canvas');
                     const img = tempDiv.querySelector('img');
                     
+                    // 檢查是否生成完畢
                     const isReady = (canvas && canvas.width > 0) || (img && img.src && img.complete && img.naturalWidth > 0);
 
                     if (isReady) {
@@ -879,7 +910,9 @@
     }
 
     async function downloadImages() {
+        // 1. 取得使用者設定的尺寸 (預設 236)
         const size = parseInt(document.getElementById('export-img-size').value) || 236;
+
         const zip = new JSZip();
         const folder = zip.folder("QR_Codes_Graphic");
         const statusDiv = document.getElementById('ocr-status');
@@ -888,7 +921,8 @@
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
             if (val !== "") {
-                let dataUrl = await generateHighResQR(val);
+                // [修正] 這裡要把 size 傳進去！
+                let dataUrl = await generateHighResQR(val, size);
                 
                 if (dataUrl) {
                     const base64Data = dataUrl.split(',')[1];
