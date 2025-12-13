@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.13 - 中心對焦版)</title>
+    <title>QR Code 智慧系統 (V3.14 - 智慧變色取景版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -43,21 +43,30 @@
         }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        /* [V3.13] 中心紅色對焦小框 */
+        /* [V3.14] 中心對焦框 (加大400% + 變色邏輯) */
         #center-guide {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 0, 0, 0.8); /* 紅色邊框 */
-            z-index: 15; /* 在 video 上方，但在 canvas 下方 */
+            width: 80px;  /* 從 20px 加大到 80px */
+            height: 80px; /* 從 20px 加大到 80px */
+            border: 2px solid rgba(255, 0, 0, 0.8); /* 預設紅色 */
+            z-index: 15; 
             pointer-events: none;
-            box-shadow: 0 0 2px rgba(0,0,0,0.5); /* 輕微陰影增加對比 */
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease; /* 平滑過渡效果 */
+            border-radius: 10px; /* 稍微圓角比較好看 */
+        }
+        
+        /* [V3.14] 成功鎖定時的綠色樣式 */
+        .guide-success {
+            border-color: #00ff00 !important; /* 變綠色 */
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8) !important; /* 增加綠色光暈 */
+            background-color: rgba(0, 255, 0, 0.1); /* 淡淡的綠色背景 */
         }
 
-        /* 動態追蹤畫布 - 最上層覆蓋 */
+        /* 動態追蹤畫布 */
         #qr-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -334,7 +343,7 @@
 </div>
 
 <div id="hidden-canvas-container"></div>
-<div class="author-info" data-i18n="authorInfo">Author: DEREK LIN _ V3.13</div>
+<div class="author-info" data-i18n="authorInfo">Author: DEREK LIN _ V3.14</div>
 
 <script>
     const translations = {
@@ -348,7 +357,7 @@
             alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
             statusCam: "相機就緒，請點擊畫面...", statusDone: "✅ 完成",
             statusExcel: "⏳ 正在產生客製化 Excel...", statusExcelDone: "✅ 下載完成！",
-            authorInfo: "Author: DEREK LIN _ V3.13",
+            authorInfo: "Author: DEREK LIN _ V3.14",
             
             // Camera States
             camScanning: "👀 掃描中... 請將 QR Code 對準畫面",
@@ -371,7 +380,7 @@
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
             statusCam: "Camera ready, tap to scan...", statusDone: "✅ Done",
             statusExcel: "⏳ Generating Excel...", statusExcelDone: "✅ Download Complete!",
-            authorInfo: "Author: DEREK LIN _ V3.13",
+            authorInfo: "Author: DEREK LIN _ V3.14",
 
             // Camera States
             camScanning: "👀 Scanning... Align QR Code",
@@ -577,6 +586,9 @@
         wrapper.style.display = "block";
         hint.innerText = translations[appConfig.currentLang].camHint;
         hint.style.color = "white";
+        // [V3.14] 重置中心框顏色
+        document.getElementById('center-guide').classList.remove('guide-success');
+        
         if (html5QrCode) {
             stopScan().then(() => {
                 isScanning = false;
@@ -662,6 +674,8 @@
         wrapper.style.display = "block";
         currentDetectedCode = null;
         clearCanvas(); 
+        // [V3.14] 開始時重置為紅色
+        document.getElementById('center-guide').classList.remove('guide-success');
 
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
@@ -677,6 +691,9 @@
                 if (decodedResult && decodedResult.result && decodedResult.result.points) {
                     drawDetectedCorners(decodedResult.result.points);
                 }
+
+                // [V3.14] 鎖定成功：中心框變綠色
+                document.getElementById('center-guide').classList.add('guide-success');
 
                 // [V3.12] 使用翻譯的變數
                 hint.innerText = t.camLocked + decodedText + t.camLockedMsg;
@@ -711,6 +728,7 @@
             document.getElementById('cam-hint-text').innerText = t.camScanning;
             document.getElementById('cam-hint-text').style.color = "white";
             clearCanvas();
+            document.getElementById('center-guide').classList.remove('guide-success'); // [V3.14]
         }
     }
 
@@ -723,6 +741,8 @@
             const t = translations[appConfig.currentLang];
             
             clearCanvas(); 
+            // [V3.14] 停止時重置為紅色
+            document.getElementById('center-guide').classList.remove('guide-success');
             
             hint.style.display = "flex";
             
