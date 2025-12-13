@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V2.3 - 高畫質輸出版)</title>
+    <title>QR Code 智慧系統 (V3.0 - Google Sheet 整合版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -19,7 +19,7 @@
         }
         body { font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; background-color: var(--bg-color); padding: 10px; margin: 0; padding-bottom: 40px; }
         
-        /* 版面配置 - 單欄式 */
+        /* 版面配置 */
         .main-layout { max-width: 1200px; margin: 0 auto; }
         
         /* 頂部 Header */
@@ -52,16 +52,18 @@
         }
         #ocr-status { margin: 5px 0; color: #d63384; font-weight: bold; min-height: 20px; font-size: 0.9rem; text-align: center; }
 
-        /* 按鈕群組 */
+        /* 按鈕群組 - RWD */
         .btn-group { display: grid; gap: 10px; width: 100%; margin: 0 0 10px 0; grid-template-columns: 1fr 1fr; }
-        @media (min-width: 768px) { .btn-group { grid-template-columns: repeat(4, 1fr); } }
+        @media (min-width: 768px) { .btn-group { grid-template-columns: repeat(5, 1fr); } } /* 調整為5欄以容納新按鈕 */
         
         button { width: 100%; padding: 12px 5px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; color: white; font-weight: bold; box-shadow: 0 3px 5px rgba(0,0,0,0.15); display: flex; flex-direction: column; justify-content: center; align-items: center; line-height: 1.2; overflow: hidden; white-space: normal; }
         button span.icon { font-size: 20px; margin-bottom: 2px; display: block; }
+        
         .btn-scan { background-color: #007bff; }
         .btn-img-export { background-color: #fd7e14; color: white; } 
         .btn-excel { background-color: #17a2b8; }
         .btn-clear { background-color: #dc3545; }
+        .btn-gsheet { background-color: #0f9d58; } /* Google Sheet 綠色 */
         button:active { transform: scale(0.98); }
 
         .batch-input-container { width: 100%; display: flex; gap: 8px; margin-bottom: 15px; }
@@ -99,7 +101,7 @@
         #logo-preview { max-width: 80px; max-height: 80px; border: 1px solid #ddd; padding: 2px; display: none; }
         .btn-remove-logo { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; display: none; margin-left: 10px; }
 
-        /* 設定頁面底部按鈕 Grid 佈局 */
+        /* Modal Footer */
         .modal-footer-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -119,7 +121,7 @@
         .btn-save { background-color: #28a745; font-size: 16px; } 
         .btn-cancel { background-color: #6c757d; font-size: 16px; }
 
-        /* 設定頁面中的說明區塊 */
+        /* 說明區塊 */
         .settings-info-section {
             background-color: #e9ecef; padding: 15px; border-radius: 6px; 
             font-size: 13px; color: #333; line-height: 1.6; margin-top: 20px;
@@ -128,6 +130,8 @@
         .settings-info-title { font-weight: bold; font-size: 15px; margin-bottom: 8px; color: #007bff; }
 
         .author-info { position: fixed; bottom: 0; left: 0; right: 0; background-color: #333; color: #fff; text-align: center; padding: 8px; font-size: 14px; letter-spacing: 1px; z-index: 900; }
+        
+        /* 隱藏容器，用於後台生成圖片 */
         #hidden-canvas-container { display: none; }
     </style>
 </head>
@@ -155,6 +159,7 @@
         <div id="ocr-status"></div>
         <div class="btn-group">
             <button class="btn-scan" onclick="initCameraWrapper()"><span class="icon">📸</span><span data-i18n="btnScan">啟用掃描器</span></button>
+            <button class="btn-gsheet" onclick="openGoogleSheetModal()"><span class="icon">🌐</span><span>匯入 G-Sheet</span></button>
             <button class="btn-img-export" onclick="openImgExportModal()"><span class="icon">🖼️</span><span data-i18n="btnImgExport">轉出圖片</span></button>
             <button class="btn-excel" onclick="exportExcelWithImages()"><span class="icon">📊</span><span data-i18n="btnExcel">轉出客製化 EXCEL</span></button>
             <button class="btn-clear" onclick="clearAll()"><span class="icon">🗑️</span><span data-i18n="btnClear">清除全部</span></button>
@@ -220,16 +225,10 @@
             <div class="settings-info-title">🖨️ 客製化輸出說明 (ZT410R)</div>
             <b>預設印表機：</b> ZDesigner ZT410R 203dpi ZPL<br>
             <b>建議紙張設定：</b><br>
-            • 寬度 (Width): 4.49 英吋<br>
-            • 高度 (Height): 7.5 英吋<br>
-            • 列印速度 (Speed): 3<br>
-            • 列印濃度 (Darkness): 15<br><br>
-            <b>列印區域邊界 (此系統設定)：</b><br>
-            • 左 (Left): 0.39 / 其他皆為 0<br><br>
+            • 寬度: 4.49 英吋, 高度: 7.5 英吋<br>
             <b>Excel 格式 (4欄)：</b><br>
             • 資料欄寬 7.57 / 圖片列高 51.75<br>
             • 圖形尺寸：1.8CM(高) x 1.55CM(寬)<br>
-            • 分隔欄強制為 1<br>
         </div>
 
         <div class="modal-footer-grid">
@@ -252,6 +251,41 @@
         <div class="modal-footer" style="display:flex; justify-content:space-between; gap:10px;">
             <button onclick="downloadImages()" style="background-color:#fd7e14;color:white;padding:8px;border:none;border-radius:4px;width:100%;">⬇️ 下載 ZIP</button>
             <button onclick="closeSettings('imgExportModal')" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px;width:100%;" data-i18n="btnCancel">取消</button>
+        </div>
+    </div>
+</div>
+
+<div id="googleSheetModal" class="modal">
+    <div class="modal-content">
+        <h3>🌐 匯入 Google Sheet 資料</h3>
+        
+        <div class="settings-info-section" style="border-left-color: #0f9d58; background: #e6f4ea;">
+            <div class="settings-info-title">📖 使用教學</div>
+            1. 在 Google 試算表，點擊 <b>檔案 > 分享 > 發布到網路</b>。<br>
+            2. 選擇 <b>"整份文件"</b> 或 <b>"工作表"</b>。<br>
+            3. 格式請務必選擇 <b>"逗號分隔值 (.csv)"</b>。<br>
+            4. 複製產生的連結並貼在下方。
+        </div>
+
+        <div class="form-group">
+            <label>🔗 CSV 連結 (Publish Link)：</label>
+            <input type="text" id="gs-url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+        </div>
+
+        <div class="form-group">
+            <label>🔡 抓取欄位 (例如 A, B, D...)：</label>
+            <input type="text" id="gs-col" placeholder="D" style="text-transform: uppercase; width: 60px; text-align: center;">
+        </div>
+
+        <div class="form-group">
+            <label>🔢 列數範圍 (例如 1-20，留空則抓全部)：</label>
+            <input type="text" id="gs-range" placeholder="2-21" style="width: 100px;">
+            <div style="font-size:12px; color:#888;">* 建議避開標題列 (例如從第 2 列開始)</div>
+        </div>
+
+        <div class="modal-footer-grid">
+            <button onclick="importFromGoogleSheet()" class="btn-big-action btn-save" style="background-color: #0f9d58;">⬇️ 開始匯入</button>
+            <button onclick="closeSettings('googleSheetModal')" class="btn-big-action btn-cancel">取消</button>
         </div>
     </div>
 </div>
@@ -290,12 +324,11 @@
         gridCount: 20, 
         currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
-        excelFontSize: 5,           
-        printMargins: { left: 0.39, right: 0, top: 0, bottom: 0 }, // V2.1 Default
-        excelColWidth: 7.57,        // V2.2 Default (~1.55cm)
+        printMargins: { left: 0.39, right: 0, top: 0, bottom: 0 },
+        excelColWidth: 7.57,       
         excelSpacerColWidth: 1,     
-        excelRowHeight: 51.75,      // V2.2 Default (~1.8cm)
-        excelSpacerRowHeight: 15   
+        excelRowHeight: 51.75,      
+        excelSpacerRowHeight: 15    
     };
 
     let centerLogoData = null; 
@@ -312,7 +345,7 @@
     }
     const debouncedGenerate = debounce((index) => generateSingleCode(index), 300);
 
-    // --- 2. 初始化 ---
+    // --- 初始化 ---
     window.onload = function() { 
         if(typeof ExcelJS === 'undefined' || typeof JSZip === 'undefined' || typeof QRCode === 'undefined') {
             alert("⚠️ 警告：部分外部程式庫未載入，請檢查網路連線。");
@@ -324,7 +357,91 @@
         document.getElementById('batch-input').addEventListener('keydown', function(event) { if (event.key === 'Enter') processBatchInput(); });
     };
 
-    // --- 3. Logo 處理邏輯 ---
+    // --- Google Sheet 邏輯 (新) ---
+    function openGoogleSheetModal() {
+        document.getElementById('googleSheetModal').style.display = "block";
+    }
+
+    function columnLetterToIndex(letter) {
+        let column = 0;
+        let length = letter.length;
+        for (let i = 0; i < length; i++) {
+            column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
+        }
+        return column - 1;
+    }
+
+    async function importFromGoogleSheet() {
+        const url = document.getElementById('gs-url').value.trim();
+        const colStr = document.getElementById('gs-col').value.trim().toUpperCase();
+        const rangeStr = document.getElementById('gs-range').value.trim();
+        const statusDiv = document.getElementById('ocr-status');
+
+        if (!url) { alert("請輸入 Google Sheet CSV 連結！"); return; }
+        if (!colStr) { alert("請輸入要抓取的欄位代號 (如 A, B, D)！"); return; }
+        
+        if (!url.includes("output=csv")) {
+            if(!confirm("⚠️ 警告：這看起來不像 CSV 連結 (通常結尾有 output=csv)。\n確定要繼續嗎？")) return;
+        }
+
+        try {
+            statusDiv.innerText = "⏳ 正在連線至 Google Sheet...";
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("網路連線失敗，請檢查連結是否公開且正確。");
+            const csvText = await response.text();
+
+            const rows = csvText.split(/\r?\n/);
+            const targetColIndex = columnLetterToIndex(colStr);
+            
+            let startRow = 1;
+            let endRow = rows.length;
+
+            if (rangeStr.includes("-")) {
+                const parts = rangeStr.split("-");
+                startRow = parseInt(parts[0]) || 1;
+                endRow = parseInt(parts[1]) || rows.length;
+            } else if (rangeStr !== "") {
+                startRow = parseInt(rangeStr);
+            }
+
+            let importedData = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                let currentRowNum = i + 1;
+                if (currentRowNum < startRow) continue;
+                if (currentRowNum > endRow) break;
+
+                let cells = rows[i].split(","); 
+                
+                if (cells.length > targetColIndex) {
+                    let cellData = cells[targetColIndex].replace(/^"|"$/g, '').trim();
+                    if (cellData) {
+                        importedData.push(cellData);
+                    }
+                }
+            }
+
+            if (importedData.length === 0) {
+                alert("❌ 找不到資料！請檢查欄位代號或列數範圍。");
+                statusDiv.innerText = "";
+                return;
+            }
+
+            fillData(importedData.join("\n"), false);
+
+            alert(`✅ 成功匯入 ${importedData.length} 筆資料！`);
+            statusDiv.innerText = "✅ 匯入完成";
+            closeSettings('googleSheetModal');
+
+        } catch (error) {
+            console.error(error);
+            alert("匯入失敗：" + error.message);
+            statusDiv.innerText = "❌ 匯入失敗";
+        }
+    }
+
+    // --- Logo 處理邏輯 ---
     function handleLogoUpload(input) {
         const file = input.files[0];
         if (!file) return;
@@ -356,7 +473,7 @@
         }
     }
 
-    // --- 4. 掃描邏輯 ---
+    // --- 掃描邏輯 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -454,7 +571,7 @@
         });
     }
 
-    // --- 5. 圖片/檔案 功能 ---
+    // --- 圖片/檔案 功能 ---
     function clearSlot(index) {
         const textInput = document.getElementById('data-' + index);
         const container = document.getElementById('code-img-' + index);
@@ -510,11 +627,16 @@
         });
     }
 
-    // --- 高畫質 QR 生成函式 (V2.3) ---
+    // --- 優化版：高畫質 QR 生成函式 (V3.0) ---
     function generateHighResQR(text) {
         return new Promise((resolve) => {
             const tempDiv = document.createElement('div');
-            const size = 512; // High Resolution
+            // 將元素加入隱藏容器，確保瀏覽器渲染
+            const hiddenContainer = document.getElementById('hidden-canvas-container') || document.body;
+            hiddenContainer.appendChild(tempDiv);
+            
+            const size = 512; 
+
             try {
                 new QRCode(tempDiv, {
                     text: text,
@@ -525,21 +647,35 @@
                     correctLevel : QRCode.CorrectLevel.H
                 });
                 
+                // 稍微增加等待時間，確保渲染完成
                 setTimeout(async () => {
                     let canvas = tempDiv.querySelector('canvas');
+                    let resultData = null;
+
                     if (canvas) {
                         if (centerLogoData) {
                             let composite = await generateCompositeCanvas(canvas, centerLogoData);
-                            resolve(composite.toDataURL('image/png'));
+                            resultData = composite.toDataURL('image/png');
                         } else {
-                            resolve(canvas.toDataURL('image/png'));
+                            resultData = canvas.toDataURL('image/png');
                         }
                     } else {
                         let img = tempDiv.querySelector('img');
-                        resolve(img ? img.src : null);
+                        resultData = img ? img.src : null;
                     }
-                }, 50);
-            } catch(e) { resolve(null); }
+
+                    // 清理
+                    if (tempDiv.parentNode) {
+                        tempDiv.parentNode.removeChild(tempDiv);
+                    }
+                    
+                    resolve(resultData);
+                }, 100); 
+
+            } catch(e) { 
+                if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+                resolve(null); 
+            }
         });
     }
 
@@ -552,28 +688,9 @@
         let count = 0;
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
-            const container = document.getElementById('code-img-' + i);
             if (val !== "") {
-                let dataUrl = null;
-                // 用戶自訂圖片(如果有) or 標準QR
-                // 此版本格位無上傳按鈕，但若用 V2.1 匯入可能會殘留標記，這裡統一用 generateHighResQR 處理標準文字
-                // 若未來加回上傳功能，需在此判斷 dataset.customImg
-                let tempContainer = document.createElement('div');
-                try {
-                    new QRCode(tempContainer, {
-                        text: val, width: size, height: size,
-                        colorDark : "#000000", colorLight : "#ffffff",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                    await new Promise(resolve => setTimeout(resolve, 50)); 
-                    let canvas = tempContainer.querySelector('canvas');
-                    if(canvas && centerLogoData) {
-                        let composite = await generateCompositeCanvas(canvas, centerLogoData);
-                        dataUrl = composite.toDataURL("image/png");
-                    } else if (canvas) {
-                        dataUrl = canvas.toDataURL("image/png");
-                    }
-                } catch(e) {}
+                // 利用高畫質生成邏輯
+                let dataUrl = await generateHighResQR(val);
                 
                 if (dataUrl) {
                     const base64Data = dataUrl.split(',')[1];
@@ -595,7 +712,7 @@
         }
     }
 
-    // --- 6. Excel 匯出 (4欄位版 V2.3) ---
+    // --- Excel 匯出 (4欄位版) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -614,8 +731,7 @@
             margins: { top: appConfig.printMargins.top, bottom: appConfig.printMargins.bottom, left: appConfig.printMargins.left, right: appConfig.printMargins.right, header: 0, footer: 0 }
         };
         
-        // V2.1: 分隔欄強制為 1
-        const colW = appConfig.excelColWidth;       
+        const colW = appConfig.excelColWidth;        
         const spcW = 1; 
         
         worksheet.columns = [
@@ -647,7 +763,6 @@
             worksheet.getRow(spcRow).height = appConfig.excelSpacerRowHeight;
         }
 
-        // 使用 for loop + await 逐一生成高畫質圖片
         for (let i = 1; i <= appConfig.gridCount; i++) {
             if (i > layoutMap.length) break;
             const pos = layoutMap[i-1];
@@ -659,7 +774,6 @@
             let val = inputEl.value.trim();
 
             if (val !== "") {
-                // V2.3: 改用 generateHighResQR 產生高畫質圖片 (512x512)
                 let base64Image = await generateHighResQR(val);
 
                 if (base64Image) {
@@ -686,7 +800,7 @@
         statusDiv.innerText = t.statusExcelDone;
     }
 
-    // --- 7. 輔助功能 ---
+    // --- 輔助功能 ---
     function fillData(text, needConfirm = true) {
         let parts = text.split(/[,;\n]+/).filter(item => item.trim().length > 0);
         const t = translations[appConfig.currentLang] || translations["en-US"];
