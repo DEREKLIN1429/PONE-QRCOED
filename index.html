@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.4 - 智能追蹤版)</title>
+    <title>QR Code 智慧系統 (V3.5 - 智能鎖定版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -38,55 +38,53 @@
             cursor: pointer; background: #000; min-height: 250px;
         }
         
-        /* 確保 video 填滿，以便座標換算準確 */
         #reader video { 
             object-fit: cover; width: 100%; height: 100%; 
         }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        /* [V3.4] 動態追蹤畫布 */
+        /* [V3.5] 動態追蹤畫布 - 設為最高層級 */
         #qr-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
-            pointer-events: none; /* 讓點擊穿透 */
-            z-index: 15; /* 在 video 上方 */
+            pointer-events: none; 
+            z-index: 20; 
         }
 
-        /* 靜態對準框 (輔助用) */
+        /* 靜態中心對準框 (輔助用，沒掃到時顯示) */
         #scan-overlay { 
             position: absolute; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); 
             width: 250px; height: 250px; 
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); 
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            z-index: 10; border-radius: 20px; pointer-events: none; display: none; 
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            z-index: 10; border-radius: 15px; pointer-events: none; display: none; 
         }
-        /* 四個角落的對準標記 */
+        /* 四個角落的裝飾 */
         #scan-overlay::before, #scan-overlay::after {
-            content: ''; position: absolute; width: 20px; height: 20px; border-color: rgba(255,255,255,0.8); border-style: solid;
+            content: ''; position: absolute; width: 20px; height: 20px; border-color: rgba(255,255,255,0.5); border-style: solid;
         }
-        #scan-overlay::before { top: 0; left: 0; border-width: 4px 0 0 4px; }
-        #scan-overlay::after { bottom: 0; right: 0; border-width: 0 4px 4px 0; }
+        #scan-overlay::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+        #scan-overlay::after { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
         
         /* 掃描線動畫 */
         .scan-line {
-            width: 100%; height: 2px; background: #ff0000; 
-            box-shadow: 0 0 4px #ff0000;
+            width: 100%; height: 2px; background: rgba(255, 0, 0, 0.5); 
+            box-shadow: 0 0 4px rgba(255, 0, 0, 0.8);
             position: absolute; top: 0;
             animation: scanMove 2s infinite linear;
         }
         @keyframes scanMove {
-            0% { top: 10%; opacity: 0; }
+            0% { top: 5%; opacity: 0; }
             10% { opacity: 1; }
             90% { opacity: 1; }
-            100% { top: 90%; opacity: 0; }
+            100% { top: 95%; opacity: 0; }
         }
         
         .camera-hint { 
             position: absolute; bottom: 10px; left: 0; right: 0;
             display: flex; justify-content: center; align-items: center;
             color: white; text-align: center; font-weight: bold; 
-            text-shadow: 1px 1px 2px black; z-index: 20; pointer-events: none; 
+            text-shadow: 1px 1px 2px black; z-index: 25; pointer-events: none; 
             font-size: 16px; 
             white-space: pre-line;
         }
@@ -556,7 +554,7 @@
         }
     }
 
-    // --- [V3.4] 掃描邏輯 & 動態追蹤 ---
+    // --- [V3.5] 掃描邏輯 & 智能四角鎖定 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -579,16 +577,15 @@
         }
     }
 
-    // [新增] 繪製動態追蹤框
-    function drawDetectedBox(points) {
+    // [新增] V3.5 智能四角框繪製
+    function drawDetectedCorners(points) {
         const canvas = document.getElementById('qr-canvas');
         const video = document.querySelector('#reader video');
-        
-        if (!canvas || !video || !points) return;
+        if (!canvas || !video || !points || points.length < 4) return;
 
         const ctx = canvas.getContext('2d');
         
-        // 設定 Canvas 解析度等於顯示大小
+        // 確保 Canvas 解析度正確
         canvas.width = video.clientWidth;
         canvas.height = video.clientHeight;
 
@@ -596,21 +593,57 @@
         const scaleY = video.clientHeight / video.videoHeight;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.beginPath();
         
-        const startX = points[0].x * scaleX;
-        const startY = points[0].y * scaleY;
-        ctx.moveTo(startX, startY);
-
-        for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x * scaleX, points[i].y * scaleY);
-        }
-        ctx.closePath();
+        // 設定樣式
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#00ff00"; 
-        ctx.stroke();
-        ctx.fillStyle = "rgba(0, 255, 0, 0.2)";
+        ctx.lineCap = "round";
+
+        // 將點轉換為畫布座標
+        const p = points.map(pt => ({ x: pt.x * scaleX, y: pt.y * scaleY }));
+
+        // 繪製半透明背景，增強鎖定感
+        ctx.beginPath();
+        ctx.moveTo(p[0].x, p[0].y);
+        ctx.lineTo(p[1].x, p[1].y);
+        ctx.lineTo(p[2].x, p[2].y);
+        ctx.lineTo(p[3].x, p[3].y);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(0, 255, 0, 0.15)";
         ctx.fill();
+
+        // 繪製四個角落 (L型)
+        const cornerLen = 25; // 角落線條長度
+
+        for (let i = 0; i < 4; i++) {
+            const curr = p[i];
+            const prev = p[(i - 1 + 4) % 4];
+            const next = p[(i + 1) % 4];
+
+            // 計算向量方向並正規化
+            const getVector = (p1, p2) => {
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                return { x: dx/dist, y: dy/dist, dist: dist };
+            };
+
+            const vecPrev = getVector(curr, prev);
+            const vecNext = getVector(curr, next);
+
+            // 確保線條不超過邊長的一半
+            const actualLenPrev = Math.min(cornerLen, vecPrev.dist / 2);
+            const actualLenNext = Math.min(cornerLen, vecNext.dist / 2);
+
+            ctx.beginPath();
+            // 畫向上一點的線段
+            ctx.moveTo(curr.x + vecPrev.x * actualLenPrev, curr.y + vecPrev.y * actualLenPrev);
+            // 畫向頂點
+            ctx.lineTo(curr.x, curr.y);
+            // 畫向下一點的線段
+            ctx.lineTo(curr.x + vecNext.x * actualLenNext, curr.y + vecNext.y * actualLenNext);
+            ctx.stroke();
+        }
     }
     
     function clearCanvas() {
@@ -634,26 +667,29 @@
             html5QrCode = new Html5Qrcode("reader");
         }
 
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const config = { fps: 15, qrbox: { width: 250, height: 250 } }; // 提高 FPS 到 15 讓框更流暢
         
         html5QrCode.start({ facingMode: "environment" }, config, 
             (decodedText, decodedResult) => {
                 currentDetectedCode = decodedText;
                 
-                // [新增] 繪製追蹤框
+                // [V3.5] 呼叫智能四角繪製
                 if (decodedResult && decodedResult.result && decodedResult.result.points) {
-                    drawDetectedBox(decodedResult.result.points);
+                    drawDetectedCorners(decodedResult.result.points);
                 }
 
-                hint.innerText = `🔍 已偵測：\n${decodedText}\n(點擊畫面確認)`;
+                hint.innerText = `🔍 已鎖定：\n${decodedText}\n(點擊畫面加入)`;
                 hint.style.color = "#ffff00"; 
             },
-            (errorMessage) => { }
+            (errorMessage) => { 
+                // 掃描中未偵測到時，可以清空畫布，避免框框卡住
+                // clearCanvas();
+            }
         ).then(() => {
             isScanning = true;
             overlay.style.display = "block";
             hint.style.display = "flex";
-            hint.innerText = "👀 掃描中... 點擊畫面抓取";
+            hint.innerText = "👀 掃描中... 請將 QR Code 對準畫面";
             hint.style.color = "white";
         }).catch(err => {
             console.error(err);
@@ -666,12 +702,12 @@
         if (!currentDetectedCode) {
             return;
         }
-        if (confirm(`Data Detected: \n${currentDetectedCode}\n\nAdd to list?`)) {
+        if (confirm(`已鎖定資料：\n${currentDetectedCode}\n\n確定要加入嗎？`)) {
             fillData(currentDetectedCode, false);
             stopScan(true);
         } else {
             currentDetectedCode = null;
-            document.getElementById('cam-hint-text').innerText = "👀 掃描中... 點擊畫面抓取";
+            document.getElementById('cam-hint-text').innerText = "👀 掃描中... 請將 QR Code 對準畫面";
             document.getElementById('cam-hint-text').style.color = "white";
             clearCanvas();
         }
@@ -686,7 +722,7 @@
             const hint = document.getElementById('cam-hint-text');
             
             overlay.style.display = "none";
-            clearCanvas(); // 停止時清除框框
+            clearCanvas(); 
             
             hint.style.display = "flex";
             
@@ -762,7 +798,7 @@
         });
     }
 
-    // --- [修正] 優化版：高畫質 QR 生成函式 ---
+    // --- 優化版：高畫質 QR 生成函式 ---
     function generateHighResQR(text) {
         return new Promise((resolve) => {
             const tempDiv = document.createElement('div');
