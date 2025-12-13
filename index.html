@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.3 - 優化版)</title>
+    <title>QR Code 智慧系統 (V3.4 - 智能追蹤版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -31,32 +31,44 @@
         .settings-icon { font-size: 24px; cursor: pointer; background: #f0f0f0; padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; transition: background 0.3s; }
         .settings-icon:hover { background: #e0e0e0; }
         
-        /* --- [優化] 相機區域樣式 --- */
+        /* --- 相機區域樣式 --- */
         #camera-wrapper { 
             width: 100%; max-width: 500px; margin: 0 auto 15px auto; 
             display: none; position: relative; overflow: hidden; border-radius: 8px;
             cursor: pointer; background: #000; min-height: 250px;
         }
+        
+        /* 確保 video 填滿，以便座標換算準確 */
+        #reader video { 
+            object-fit: cover; width: 100%; height: 100%; 
+        }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        /* 新增：掃描對準框 */
+        /* [V3.4] 動態追蹤畫布 */
+        #qr-canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; /* 讓點擊穿透 */
+            z-index: 15; /* 在 video 上方 */
+        }
+
+        /* 靜態對準框 (輔助用) */
         #scan-overlay { 
             position: absolute; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); 
             width: 250px; height: 250px; 
-            /* 使用 box-shadow 建立遮罩效果 (四周變暗，中間透亮) */
             box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); 
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             z-index: 10; border-radius: 20px; pointer-events: none; display: none; 
         }
-        /* 新增：四個角落的對準標記 */
+        /* 四個角落的對準標記 */
         #scan-overlay::before, #scan-overlay::after {
-            content: ''; position: absolute; width: 20px; height: 20px; border-color: #00ff00; border-style: solid;
+            content: ''; position: absolute; width: 20px; height: 20px; border-color: rgba(255,255,255,0.8); border-style: solid;
         }
         #scan-overlay::before { top: 0; left: 0; border-width: 4px 0 0 4px; }
         #scan-overlay::after { bottom: 0; right: 0; border-width: 0 4px 4px 0; }
         
-        /* 新增：掃描線動畫 */
+        /* 掃描線動畫 */
         .scan-line {
             width: 100%; height: 2px; background: #ff0000; 
             box-shadow: 0 0 4px #ff0000;
@@ -179,9 +191,12 @@
         </div>
         
         <div id="camera-wrapper" onclick="handleCameraClick()">
+            <canvas id="qr-canvas"></canvas>
+            
             <div id="scan-overlay">
                 <div class="scan-line"></div>
             </div>
+            
             <div id="reader"></div>
             <div id="cam-hint-text" class="camera-hint">👆 點擊畫面開始掃描</div>
         </div>
@@ -426,7 +441,6 @@
 
     // [修正] CSV Regex 解析函式
     function parseCSVLine(text) {
-        // 正規表達式處理 CSV 引號與逗號
         const re = /(?!\s*$)\s*(?:'([^'\\]*(?:\\[\S\s][^'\\]*)*)'|"([^"\\]*(?:\\[\S\s][^"\\]*)*)"|([^,'"\s\\]*(?:\s+[^,'"\s\\]+)*))\s*(?:,|$)/g;
         const a = [];
         text.replace(re, function(m0, m1, m2, m3) {
@@ -497,8 +511,6 @@
                 return;
             }
 
-            // 用換行符號合併後傳入，這會再被 fillData 拆解
-            // 注意：如果資料本身含換行，可能會影響，但這邊先以資料格為單位
             fillData(importedData.join("\n"), false);
 
             alert(`✅ 成功匯入 ${importedData.length} 筆資料！`);
@@ -544,7 +556,7 @@
         }
     }
 
-    // --- 掃描邏輯 ---
+    // --- [V3.4] 掃描邏輯 & 動態追蹤 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -567,6 +579,48 @@
         }
     }
 
+    // [新增] 繪製動態追蹤框
+    function drawDetectedBox(points) {
+        const canvas = document.getElementById('qr-canvas');
+        const video = document.querySelector('#reader video');
+        
+        if (!canvas || !video || !points) return;
+
+        const ctx = canvas.getContext('2d');
+        
+        // 設定 Canvas 解析度等於顯示大小
+        canvas.width = video.clientWidth;
+        canvas.height = video.clientHeight;
+
+        const scaleX = video.clientWidth / video.videoWidth;
+        const scaleY = video.clientHeight / video.videoHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        
+        const startX = points[0].x * scaleX;
+        const startY = points[0].y * scaleY;
+        ctx.moveTo(startX, startY);
+
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x * scaleX, points[i].y * scaleY);
+        }
+        ctx.closePath();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#00ff00"; 
+        ctx.stroke();
+        ctx.fillStyle = "rgba(0, 255, 0, 0.2)";
+        ctx.fill();
+    }
+    
+    function clearCanvas() {
+        const canvas = document.getElementById('qr-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
     function startScan() {
         const wrapper = document.getElementById('camera-wrapper');
         const overlay = document.getElementById('scan-overlay');
@@ -574,6 +628,7 @@
         
         wrapper.style.display = "block";
         currentDetectedCode = null;
+        clearCanvas(); 
 
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
@@ -582,8 +637,14 @@
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         
         html5QrCode.start({ facingMode: "environment" }, config, 
-            (decodedText) => {
+            (decodedText, decodedResult) => {
                 currentDetectedCode = decodedText;
+                
+                // [新增] 繪製追蹤框
+                if (decodedResult && decodedResult.result && decodedResult.result.points) {
+                    drawDetectedBox(decodedResult.result.points);
+                }
+
                 hint.innerText = `🔍 已偵測：\n${decodedText}\n(點擊畫面確認)`;
                 hint.style.color = "#ffff00"; 
             },
@@ -612,6 +673,7 @@
             currentDetectedCode = null;
             document.getElementById('cam-hint-text').innerText = "👀 掃描中... 點擊畫面抓取";
             document.getElementById('cam-hint-text').style.color = "white";
+            clearCanvas();
         }
     }
 
@@ -624,6 +686,8 @@
             const hint = document.getElementById('cam-hint-text');
             
             overlay.style.display = "none";
+            clearCanvas(); // 停止時清除框框
+            
             hint.style.display = "flex";
             
             if (isSuccess) {
@@ -698,8 +762,7 @@
         });
     }
 
-    // --- [修正] 優化版：高畫質 QR 生成函式 (V3.3) ---
-    // 使用 Polling (setInterval) 取代固定的 setTimeout，解決競態條件問題
+    // --- [修正] 優化版：高畫質 QR 生成函式 ---
     function generateHighResQR(text) {
         return new Promise((resolve) => {
             const tempDiv = document.createElement('div');
@@ -718,17 +781,14 @@
                     correctLevel : QRCode.CorrectLevel.H
                 });
                 
-                // 改用輪詢機制檢查
                 let attempts = 0;
-                const maxAttempts = 40; // 40 * 50ms = 2秒逾時
+                const maxAttempts = 40; 
                 
                 const checkInterval = setInterval(async () => {
                     attempts++;
                     const canvas = tempDiv.querySelector('canvas');
                     const img = tempDiv.querySelector('img');
                     
-                    // 檢查 Canvas 是否存在且寬度大於 0 (表示已繪製)
-                    // 或者是 img 標籤且已載入
                     const isReady = (canvas && canvas.width > 0) || (img && img.src && img.complete && img.naturalWidth > 0);
 
                     if (isReady) {
@@ -746,15 +806,14 @@
                             resultData = img.src;
                         }
 
-                        // 清理
                         if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
                         resolve(resultData);
                     } else if (attempts >= maxAttempts) {
                         clearInterval(checkInterval);
                         if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-                        resolve(null); // 超時回傳 null
+                        resolve(null);
                     }
-                }, 50); // 每 50ms 檢查一次
+                }, 50); 
 
             } catch(e) { 
                 if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
