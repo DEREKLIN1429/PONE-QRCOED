@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V1.7 - 修正版)</title>
+    <title>QR Code 智慧系統 (V1.9 - 簡潔精確版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -80,32 +80,14 @@
 
         /* 網格系統 */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding-bottom: 50px; }
-        .grid-item { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #e1e1e1; display: flex; flex-direction: column; align-items: center; overflow: hidden; /* 防止內容溢出格位 */ }
+        .grid-item { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #e1e1e1; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
         .grid-label { font-size: 12px; color: #888; margin-bottom: 5px; align-self: flex-start; }
         
-        /* 修正：輸入框溢出問題 */
-        .input-group { 
-            display: flex; 
-            width: 100%; 
-            gap: 5px; 
-            margin-bottom: 8px; 
-            min-width: 0; /* 關鍵修正：允許 Flex 子元素縮小 */
-        }
-        .grid-input { 
-            flex: 1; 
-            min-width: 0; /* 關鍵修正：防止輸入框被長文字撐開 */
-            padding: 8px; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            font-size: 16px; 
-            font-weight: bold; 
-            color: #333; 
-            text-align: center; 
-            background-color: #fafafa; 
-        }
+        .input-group { display: flex; width: 100%; gap: 5px; margin-bottom: 8px; min-width: 0; }
+        .grid-input { flex: 1; min-width: 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-weight: bold; color: #333; text-align: center; background-color: #fafafa; }
         .grid-input:focus { border-color: #007bff; background-color: #fff; }
-        .btn-upload { width: 40px; background: #6c757d; padding: 0; display: flex; justify-content: center; align-items: center; border-radius: 4px; flex-shrink: 0; /* 防止按鈕被擠壓 */ }
-        .file-input-hidden { display: none; }
+        
+        /* 移除上傳按鈕樣式 */
 
         .code-display-area { width: 100%; height: 120px; background-color: #fff; display: flex; justify-content: center; align-items: center; margin-bottom: 5px; border: 1px dashed #ddd; overflow: hidden; position: relative; transition: border-color 0.2s; }
         .code-display-area:hover { border-color: #007bff; border-style: solid; } 
@@ -120,22 +102,43 @@
         /* Modal 彈窗 */
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 85%; max-width: 400px; border-radius: 8px; text-align: left; max-height: 90vh; overflow-y: auto; }
-        .modal-footer { text-align: right; margin-top: 20px; display: flex; justify-content: space-between; align-items: center;}
+        
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         
-        .lang-manage-list { margin-top: 10px; border: 1px solid #eee; padding: 5px; max-height: 100px; overflow-y: auto; }
-        .lang-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #f0f0f0; align-items: center; }
-        .lang-item:last-child { border-bottom: none; }
-        .btn-sm-del { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; padding: 2px 5px; width: auto; height: auto; }
-        .lang-add-group { display: flex; gap: 5px; margin-top: 10px; align-items: center; }
-        .lang-add-group input { flex: 1; padding: 6px; font-size: 13px; }
-        .btn-sm-add { width: auto; flex: 0 0 auto; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 6px 12px; font-size: 13px; }
-
         .logo-preview-container { margin-top: 10px; text-align: center; }
         #logo-preview { max-width: 80px; max-height: 80px; border: 1px solid #ddd; padding: 2px; display: none; }
         .btn-remove-logo { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; display: none; margin-left: 10px; }
+
+        /* 設定頁面底部按鈕 Grid 佈局 */
+        .modal-footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-big-action {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s;
+        }
+        .btn-big-action:active { opacity: 0.8; transform: scale(0.98); }
+        .btn-reset { background-color: #dc3545; font-size: 14px; } 
+        .btn-save { background-color: #28a745; font-size: 16px; } 
+        .btn-cancel { background-color: #6c757d; font-size: 16px; }
 
         .author-info { position: fixed; bottom: 0; left: 0; right: 0; background-color: #333; color: #fff; text-align: center; padding: 8px; font-size: 14px; letter-spacing: 1px; z-index: 900; }
         
@@ -179,13 +182,14 @@
     <div class="right-column">
         <div class="print-settings-title" data-i18n="printSettings">🖨️ 客製化輸出說明</div>
         <div class="info-box">
-            此模式為 <b>4欄精確版 V1.7</b>。<br><br>
+            此模式為 <b>簡潔精確版 V1.9</b>。<br><br>
             <b>📏 Excel 版面調整 (4欄式)：</b><br>
             • 資料欄 (B,D,F,H)：寬 <b>7</b> (約 1.5cm)<br>
-            • 分隔欄 (A,C,E,G,I)：寬 <b>1</b><br>
+            • 分隔欄 (A,C,E,G,I)：<b>強制為 1</b><br>
             • 圖片列 (A2,A5...)：高 <b>42.75</b> (約 1.5cm)<br>
             • 分隔列 (A1,A4...)：高 <b>15</b><br>
-            <span style="font-size:12px; color:#666;">(以上參數皆可於設定中調整)</span><br><br>
+            • 字體大小：<b>5</b><br>
+            <span style="font-size:12px; color:#666;">(部分參數可於設定中調整)</span><br><br>
             <b>🎨 中心貼圖：</b><br>
             至【系統設定 ⚙️】上傳圖片，即可生成專屬圖形 QR Code。<br>
         </div>
@@ -206,8 +210,8 @@
                     <input type="number" id="set-excel-width" step="0.01" placeholder="7">
                 </div>
                 <div style="flex:1;">
-                    <label style="font-size:12px; color:#666;">分隔欄寬 (A,C,E...)</label>
-                    <input type="number" id="set-spacer-width" step="0.01" placeholder="1">
+                    <label style="font-size:12px; color:#999;">分隔欄寬</label>
+                    <input type="text" value="1 (Fixed)" disabled style="background:#eee; color:#666;">
                 </div>
             </div>
             <div style="display:flex; gap:10px;">
@@ -245,17 +249,10 @@
             </div>
         </div>
 
-        <div class="form-group" style="border-top:1px solid #eee; padding-top:10px;">
-            <label data-i18n="lblLangManage">語言管理：</label>
-            <div class="lang-manage-list" id="lang-list-container"></div>
-            <div class="lang-add-group"><input type="text" id="new-lang-code" placeholder="Code"><input type="text" id="new-lang-name" placeholder="Name"><button class="btn-sm-add" onclick="addNewLanguage()">Add</button></div>
-        </div>
-        <div class="modal-footer">
-            <button onclick="resetSettings()" style="background-color:#dc3545; color:white; padding:8px; border:none; border-radius:4px; font-size:12px;">⚠️ 恢復原廠</button>
-            <div style="display:flex; gap: 10px;">
-                <button onclick="saveSettings()" style="background-color:#28a745;color:white;padding:8px;border:none;border-radius:4px; width:auto;" data-i18n="btnSave">儲存</button>
-                <button onclick="closeSettings('settingsModal')" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px; width:auto;" data-i18n="btnCancel">取消</button>
-            </div>
+        <div class="modal-footer-grid">
+            <button onclick="resetSettings()" class="btn-big-action btn-reset">⚠️ 恢復原廠</button>
+            <button onclick="saveSettings()" class="btn-big-action btn-save" data-i18n="btnSave">儲存</button>
+            <button onclick="closeSettings('settingsModal')" class="btn-big-action btn-cancel" data-i18n="btnCancel">取消</button>
         </div>
     </div>
 </div>
@@ -269,9 +266,9 @@
             <input type="number" id="export-img-size" value="236" step="1" placeholder="236">
             <div style="font-size:12px; color:#888; margin-top:5px;">* 236px 約等於 300dpi 下的 2cm</div>
         </div>
-        <div class="modal-footer">
-            <button onclick="downloadImages()" style="background-color:#fd7e14;color:white;padding:8px 15px;border:none;border-radius:4px; width:auto;">⬇️ 下載 ZIP</button>
-            <button onclick="closeSettings('imgExportModal')" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px; width:auto;" data-i18n="btnCancel">取消</button>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; gap:10px;">
+            <button onclick="downloadImages()" style="background-color:#fd7e14;color:white;padding:8px;border:none;border-radius:4px;width:100%;">⬇️ 下載 ZIP</button>
+            <button onclick="closeSettings('imgExportModal')" style="background-color:#6c757d;color:white;padding:8px;border:none;border-radius:4px;width:100%;" data-i18n="btnCancel">取消</button>
         </div>
     </div>
 </div>
@@ -288,7 +285,7 @@
             btnScan: "啟用掃描器", btnImgExport: "轉出圖片", btnClear: "清除全部", btnExcel: "轉出客製化 EXCEL",
             btnAdd: "⬇️ 加入", batchPlace: "快速輸入資料或 URL...",
             printSettings: "🖨️ 客製化輸出說明",
-            settingsTitle: "系統設定", lblAppTitle: "主標題名稱：", lblGridCount: "總格數設定：", lblLangManage: "語言管理：",
+            settingsTitle: "系統設定", lblAppTitle: "主標題名稱：", lblGridCount: "總格數設定：",
             btnSave: "儲存", btnCancel: "取消", gridLabel: "格位 ", gridPlace: "待輸入...",
             alertEmpty: "目前沒有資料可以匯出！", alertFull: "⚠️ 欄位已滿！",
             statusCam: "相機就緒，請點擊畫面...", statusDone: "✅ 完成",
@@ -300,7 +297,7 @@
             btnScan: "Enable Scanner", btnImgExport: "Export Images", btnClear: "Clear All", btnExcel: "Export Custom Excel",
             btnAdd: "⬇️ Add", batchPlace: "Quick input or URL...",
             printSettings: "🖨️ Custom Export Info",
-            settingsTitle: "System Settings", lblAppTitle: "App Title:", lblGridCount: "Grid Count:", lblLangManage: "Language Manage:",
+            settingsTitle: "System Settings", lblAppTitle: "App Title:", lblGridCount: "Grid Count:",
             btnSave: "Save", btnCancel: "Cancel", gridLabel: "Slot ", gridPlace: "Waiting...",
             alertEmpty: "No data to export!", alertFull: "⚠️ Grid is full!",
             statusCam: "Camera ready, tap to scan...", statusDone: "✅ Done",
@@ -313,13 +310,13 @@
         gridCount: 20, 
         currentLang: "zh-TW",
         availableLangs: [ { code: "zh-TW", name: "繁體中文" }, { code: "en-US", name: "English" } ],
-        excelFontSize: 6,
+        excelFontSize: 5,           // V1.9: Default 5
         printMargins: { left: 0.1, right: 0, top: 0, bottom: 0 },
-        // 預設參數 (V1.6 - 4欄版)
-        excelColWidth: 7,          // B, D, F, H (約 1.5cm)
-        excelSpacerColWidth: 1,    // A, C, E, G, I
-        excelRowHeight: 42.75,     // A2, A5... (約 1.5cm)
-        excelSpacerRowHeight: 15   // A1, A4...
+        // 預設參數 (V1.9)
+        excelColWidth: 7,          
+        excelSpacerColWidth: 1,     // V1.9: Default 1
+        excelRowHeight: 42.75,     
+        excelSpacerRowHeight: 15   
     };
 
     let centerLogoData = null; 
@@ -358,8 +355,6 @@
             document.getElementById('logo-preview').src = centerLogoData;
             document.getElementById('logo-preview').style.display = 'inline-block';
             document.getElementById('btn-remove-logo').style.display = 'inline-block';
-            
-            // 修正：上傳後自動重新產生所有 QR Code 以顯示 Logo
             regenerateAllCodes();
         };
         reader.readAsDataURL(file);
@@ -370,12 +365,9 @@
         document.getElementById('logo-preview').src = "";
         document.getElementById('logo-preview').style.display = 'none';
         document.getElementById('btn-remove-logo').style.display = 'none';
-        
-        // 修正：移除後自動重新產生所有 QR Code
         regenerateAllCodes();
     }
     
-    // 重新產生所有已存在的 QR Codes
     function regenerateAllCodes() {
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
@@ -462,28 +454,13 @@
         }).catch(err => console.log(err));
     }
 
-    // --- 5. 圖片/檔案 功能 ---
-    function triggerFileUpload(index) { document.getElementById('file-input-' + index).click(); }
-    function handleFileUpload(index, input) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const container = document.getElementById('code-img-' + index);
-            const textInput = document.getElementById('data-' + index);
-            textInput.value = "[IMAGE_OBJECT]"; textInput.disabled = true; 
-            container.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:contain;">`;
-            container.dataset.customImg = "true";
-        };
-        reader.readAsDataURL(file);
-    }
+    // --- 5. 圖片/檔案 功能 (已精簡) ---
     function clearSlot(index) {
         const textInput = document.getElementById('data-' + index);
         const container = document.getElementById('code-img-' + index);
-        const fileInput = document.getElementById('file-input-' + index);
         textInput.value = ""; textInput.disabled = false;
-        container.innerHTML = ""; container.dataset.customImg = "false";
-        fileInput.value = ""; document.getElementById('text-info-' + index).innerText = "";
+        container.innerHTML = ""; 
+        document.getElementById('text-info-' + index).innerText = "";
     }
     async function copyQrImage(index) {
         const container = document.getElementById('code-img-' + index);
@@ -543,33 +520,28 @@
         for (let i = 1; i <= appConfig.gridCount; i++) {
             let val = document.getElementById('data-' + i).value.trim();
             const container = document.getElementById('code-img-' + i);
-            const isCustomImg = container.dataset.customImg === "true";
             if (val !== "") {
                 let dataUrl = null;
-                if (isCustomImg) {
-                    const img = container.querySelector('img');
-                    if (img) dataUrl = img.src;
-                } else {
-                    let tempContainer = document.createElement('div');
-                    try {
-                        new QRCode(tempContainer, {
-                            text: val, width: size, height: size,
-                            colorDark : "#000000", colorLight : "#ffffff",
-                            correctLevel : QRCode.CorrectLevel.H
-                        });
-                        await new Promise(resolve => setTimeout(resolve, 50)); 
-                        let canvas = tempContainer.querySelector('canvas');
-                        if(canvas && centerLogoData) {
-                            let composite = await generateCompositeCanvas(canvas, centerLogoData);
-                            dataUrl = composite.toDataURL("image/png");
-                        } else if (canvas) {
-                            dataUrl = canvas.toDataURL("image/png");
-                        }
-                    } catch(e) {}
-                }
+                let tempContainer = document.createElement('div');
+                try {
+                    new QRCode(tempContainer, {
+                        text: val, width: size, height: size,
+                        colorDark : "#000000", colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 50)); 
+                    let canvas = tempContainer.querySelector('canvas');
+                    if(canvas && centerLogoData) {
+                        let composite = await generateCompositeCanvas(canvas, centerLogoData);
+                        dataUrl = composite.toDataURL("image/png");
+                    } else if (canvas) {
+                        dataUrl = canvas.toDataURL("image/png");
+                    }
+                } catch(e) {}
+                
                 if (dataUrl) {
                     const base64Data = dataUrl.split(',')[1];
-                    const safeName = isCustomImg ? `Custom_${i}` : val.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+                    const safeName = val.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
                     folder.file(`${i}_${safeName}.png`, base64Data, {base64: true});
                     count++;
                 }
@@ -587,7 +559,7 @@
         }
     }
 
-    // --- 6. Excel 匯出 (4欄位版 V1.6) ---
+    // --- 6. Excel 匯出 (4欄位版 V1.9) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -606,9 +578,9 @@
             margins: { top: appConfig.printMargins.top, bottom: appConfig.printMargins.bottom, left: appConfig.printMargins.left, right: appConfig.printMargins.right, header: 0, footer: 0 }
         };
         
-        // V1.6 4欄版定義：A(Spacer), B(Data), C(Spacer), D(Data), E(Spacer), F(Data), G(Spacer), H(Data), I(Spacer)
-        const colW = appConfig.excelColWidth;       // 預設 7
-        const spcW = appConfig.excelSpacerColWidth; // 預設 1
+        // V1.9 定義：分隔欄強制為 1
+        const colW = appConfig.excelColWidth;       
+        const spcW = 1; // V1.9 Force Spacer Width
         
         worksheet.columns = [
             { width: spcW }, { width: colW }, { width: spcW }, { width: colW }, 
@@ -616,36 +588,27 @@
             { width: spcW }
         ];
 
-        // 定義資料欄索引 (B, D, F, H) -> (2, 4, 6, 8)
         const contentCols = [2, 4, 6, 8]; 
-        
-        // 產生 Layout Map (無限延伸列，每列 4 個)
         const layoutMap = [];
-        
-        let currentRow = 2; // 第一個圖片列
+        let currentRow = 2; 
         let totalItems = appConfig.gridCount;
-        let rowsNeeded = Math.ceil(totalItems / 4); // 每行 4 個
+        let rowsNeeded = Math.ceil(totalItems / 4);
 
         for (let r = 0; r < rowsNeeded; r++) {
              contentCols.forEach(col => {
                  layoutMap.push({ row: currentRow, col: col });
              });
-             currentRow += 3; // 2 -> 5 -> 8 ...
+             currentRow += 3;
         }
 
-        // 設定列高
-        // Row 1 (Top Spacer)
         worksheet.getRow(1).height = appConfig.excelSpacerRowHeight; 
-        
-        // 迴圈設定每一組的高度
         for (let r = 0; r < rowsNeeded; r++) {
             let startRow = 2 + (r * 3);
             let txtRow = startRow + 1;
             let spcRow = startRow + 2;
-
-            worksheet.getRow(startRow).height = appConfig.excelRowHeight; // 圖片列 (42.75)
-            worksheet.getRow(txtRow).height = 15; // 文字列
-            worksheet.getRow(spcRow).height = appConfig.excelSpacerRowHeight; // 分隔列 (15)
+            worksheet.getRow(startRow).height = appConfig.excelRowHeight; 
+            worksheet.getRow(txtRow).height = 15;
+            worksheet.getRow(spcRow).height = appConfig.excelSpacerRowHeight;
         }
 
         for (let i = 1; i <= appConfig.gridCount; i++) {
@@ -664,7 +627,7 @@
                 let imgObj = containerDiv.querySelector('img');
                 let base64Image = null;
 
-                if (canvasObj && centerLogoData && containerDiv.dataset.customImg !== "true") {
+                if (canvasObj && centerLogoData) {
                      let composite = await generateCompositeCanvas(canvasObj, centerLogoData);
                      base64Image = composite.toDataURL('image/png');
                 } else {
@@ -682,9 +645,10 @@
                 }
                 
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex);
-                textCell.value = (val === "[IMAGE_OBJECT]") ? "Image Object" : val;
+                textCell.value = val;
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; 
-                textCell.font = { size: appConfig.excelFontSize, bold: true, name: 'Arial' };
+                // V1.9: Font Size 5
+                textCell.font = { size: 5, bold: true, name: 'Arial' };
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex);
                 imgCell.border = { top: {style:'medium'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'none'} };
                 textCell.border = { top: {style:'none'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'medium'} };
@@ -692,7 +656,7 @@
         }
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, "QR_System_V1.7_4Cols.xlsx");
+        saveAs(blob, "QR_System_V1.9_Fixed.xlsx");
         statusDiv.innerText = t.statusExcelDone;
     }
 
@@ -705,8 +669,7 @@
             placed = false;
             for (let i = 1; i <= appConfig.gridCount; i++) {
                 let input = document.getElementById('data-' + i);
-                let container = document.getElementById('code-img-' + i);
-                if (input.value.trim() === "" && container.dataset.customImg !== "true") {
+                if (input.value.trim() === "") {
                     input.value = part; generateSingleCode(i); placed = true; break;
                 }
             }
@@ -723,7 +686,6 @@
             select.appendChild(option);
         });
         select.value = appConfig.currentLang;
-        updateLangManageList();
     }
     function changeLanguage(langCode) { appConfig.currentLang = langCode; applyLanguage(langCode); saveSettingsDirectly(); }
     
@@ -740,34 +702,6 @@
         document.getElementById('app-title').innerText = appConfig.title; 
     }
     
-    function updateLangManageList() {
-        const container = document.getElementById('lang-list-container');
-        container.innerHTML = "";
-        appConfig.availableLangs.forEach((lang, index) => {
-            let div = document.createElement('div');
-            div.className = 'lang-item';
-            div.innerHTML = `<span>${lang.name} (${lang.code})</span>${appConfig.availableLangs.length > 1 ? `<button class="btn-sm-del" onclick="removeLanguage(${index})">Del</button>` : ''}`;
-            container.appendChild(div);
-        });
-    }
-    function addNewLanguage() {
-        const code = document.getElementById('new-lang-code').value.trim();
-        const name = document.getElementById('new-lang-name').value.trim();
-        if(!code || !name) { alert("Required!"); return; }
-        appConfig.availableLangs.push({ code: code, name: name });
-        updateLangManageList();
-        const select = document.getElementById('main-lang-select');
-        let option = document.createElement('option');
-        option.value = code; option.text = name;
-        select.appendChild(option);
-    }
-    function removeLanguage(index) {
-        if(!confirm("Delete?")) return;
-        appConfig.availableLangs.splice(index, 1);
-        if (appConfig.availableLangs.length > 0) changeLanguage(appConfig.availableLangs[0].code);
-        updateLangManageList(); initLangSelect();
-    }
-
     function initGrid() {
         const gridContainer = document.getElementById('main-grid');
         gridContainer.innerHTML = ""; 
@@ -784,20 +718,10 @@
             input.type = 'text'; input.className = 'grid-input'; input.id = 'data-' + i;
             input.placeholder = t.gridPlace || "Waiting...";
             input.onkeyup = function() { debouncedGenerate(i); };
-            let uploadBtn = document.createElement('button');
-            uploadBtn.className = 'btn-upload';
-            uploadBtn.innerHTML = '📂';
-            uploadBtn.title = "上傳圖片物件";
-            uploadBtn.onclick = function() { triggerFileUpload(i); };
-            let fileInput = document.createElement('input');
-            fileInput.type = 'file'; fileInput.accept = 'image/*';
-            fileInput.id = 'file-input-' + i;
-            fileInput.className = 'file-input-hidden';
-            fileInput.onchange = function() { handleFileUpload(i, this); };
+            
+            // V1.9: 移除上傳按鈕
 
             inputGroup.appendChild(input);
-            inputGroup.appendChild(uploadBtn);
-            inputGroup.appendChild(fileInput);
             let codeDiv = document.createElement('div');
             codeDiv.id = 'code-container-' + i; codeDiv.className = 'code-display-area';
             let imgContent = document.createElement('div');
@@ -808,7 +732,6 @@
             imgContent.style.display = "flex";
             imgContent.style.justifyContent = "center";
             imgContent.style.alignItems = "center";
-            imgContent.dataset.customImg = "false"; 
             imgContent.onclick = function() { copyQrImage(i); };
             imgContent.title = "點擊複製";
             codeDiv.appendChild(imgContent);
@@ -826,7 +749,6 @@
         let inputVal = document.getElementById('data-' + index).value.trim();
         let container = document.getElementById('code-img-' + index);
         let textContainer = document.getElementById('text-info-' + index);
-        if (container.dataset.customImg === "true") return;
         
         container.innerHTML = ""; 
         textContainer.innerText = inputVal;
@@ -842,7 +764,6 @@
                 correctLevel : QRCode.CorrectLevel.H 
             });
 
-            // 修正：增強 Logo 繪製邏輯，使用 setInterval 檢查 canvas 是否就緒
             if (centerLogoData) {
                 let attempts = 0;
                 let checkCanvas = setInterval(() => {
@@ -863,7 +784,6 @@
                         };
                         logoImg.src = centerLogoData;
                     } else if (attempts > 20) {
-                        // 超時停止檢查 (約2秒)
                         clearInterval(checkCanvas);
                     }
                 }, 100);
@@ -892,9 +812,8 @@
         document.getElementById('set-margin-top').value = appConfig.printMargins.top;
         document.getElementById('set-margin-bottom').value = appConfig.printMargins.bottom;
         
-        // 載入 V1.6 參數
         document.getElementById('set-excel-width').value = appConfig.excelColWidth;
-        document.getElementById('set-spacer-width').value = appConfig.excelSpacerColWidth;
+        // set-spacer-width is disabled/readonly
         document.getElementById('set-excel-height').value = appConfig.excelRowHeight;
         document.getElementById('set-spacer-height').value = appConfig.excelSpacerRowHeight;
 
@@ -903,7 +822,6 @@
             document.getElementById('logo-preview').style.display = 'inline-block';
             document.getElementById('btn-remove-logo').style.display = 'inline-block';
         }
-        updateLangManageList(); 
         document.getElementById('settingsModal').style.display = "block";
     }
     function closeSettings(modalId) { document.getElementById(modalId).style.display = "none"; }
@@ -917,9 +835,8 @@
             top: parseFloat(document.getElementById('set-margin-top').value) || 0,
             bottom: parseFloat(document.getElementById('set-margin-bottom').value) || 0
         };
-        // 儲存 V1.6 參數
         appConfig.excelColWidth = parseFloat(document.getElementById('set-excel-width').value) || 7;
-        appConfig.excelSpacerColWidth = parseFloat(document.getElementById('set-spacer-width').value) || 1;
+        // Spacer Width is hardcoded to 1, no need to save from input
         appConfig.excelRowHeight = parseFloat(document.getElementById('set-excel-height').value) || 42.75;
         appConfig.excelSpacerRowHeight = parseFloat(document.getElementById('set-spacer-height').value) || 15;
 
@@ -948,9 +865,8 @@
             appConfig.availableLangs = parsed.availableLangs;
             if(parsed.printMargins) appConfig.printMargins = parsed.printMargins;
             
-            // 讀取 V1.6 參數
             appConfig.excelColWidth = parsed.excelColWidth || 7;
-            appConfig.excelSpacerColWidth = parsed.excelSpacerColWidth || 1;
+            appConfig.excelSpacerColWidth = 1; // Force reset to 1 on load
             appConfig.excelRowHeight = parsed.excelRowHeight || 42.75;
             appConfig.excelSpacerRowHeight = parsed.excelSpacerRowHeight || 15;
         }
