@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.7 - 極簡追蹤版)</title>
+    <title>QR Code 智慧系統 (V3.8 - 精緻對焦版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -43,15 +43,13 @@
         }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        /* [V3.7] 動態追蹤畫布 - 唯一的覆蓋層 */
+        /* 動態追蹤畫布 - 唯一的覆蓋層 */
         #qr-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             pointer-events: none; 
             z-index: 20; 
         }
-
-        /* 移除原本的 #scan-overlay 與 .scan-line 樣式，保持畫面乾淨 */
         
         .camera-hint { 
             position: absolute; bottom: 10px; left: 0; right: 0;
@@ -523,7 +521,7 @@
         }
     }
 
-    // --- [V3.7] 掃描邏輯 ---
+    // --- [V3.8] 掃描邏輯 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -546,7 +544,7 @@
         }
     }
 
-    // [新增] V3.6/3.7 繪製四角 L 型括號 (Bracket Style)
+    // [新增] V3.8 繪製四角 L 型括號 (尺寸減半: 25px)
     function drawDetectedCorners(points) {
         const canvas = document.getElementById('qr-canvas');
         const video = document.querySelector('#reader video');
@@ -563,8 +561,8 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // 設定樣式 (亮綠色, 加粗, 圓角端點)
-        ctx.lineWidth = 6;
+        // 設定樣式 
+        ctx.lineWidth = 5;
         ctx.strokeStyle = "#00ff00"; 
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
@@ -572,33 +570,28 @@
         // 將點轉換為畫布座標
         const p = points.map(pt => ({ x: pt.x * scaleX, y: pt.y * scaleY }));
 
-        // 定義 L 型括號的臂長 (固定像素值，模擬約 2CM 的視覺效果)
-        const bracketLen = 50; 
+        // [修改] 括號長度減半 (50 -> 25)
+        const bracketLen = 25; 
 
         ctx.beginPath();
 
         for (let i = 0; i < 4; i++) {
             const curr = p[i];
-            // 找出相鄰的兩個頂點
             const prev = p[(i - 1 + 4) % 4];
             const next = p[(i + 1) % 4];
 
-            // 計算向量方向並正規化
             const getNormalizedVector = (pFrom, pTo) => {
                 let dx = pTo.x - pFrom.x;
                 let dy = pTo.y - pFrom.y;
-                const len = Math.sqrt(dx*dx + dy*dy) || 1; // 避免除以零
+                const len = Math.sqrt(dx*dx + dy*dy) || 1; 
                 return { x: dx / len, y: dy / len };
             };
 
             const vecPrev = getNormalizedVector(curr, prev);
             const vecNext = getNormalizedVector(curr, next);
 
-            // 繪製 L 型的兩條臂
-            // 臂 1：指向前一個點
             ctx.moveTo(curr.x + vecPrev.x * bracketLen, curr.y + vecPrev.y * bracketLen);
             ctx.lineTo(curr.x, curr.y);
-            // 臂 2：指向下一個點
             ctx.lineTo(curr.x + vecNext.x * bracketLen, curr.y + vecNext.y * bracketLen);
         }
         ctx.stroke();
@@ -630,7 +623,7 @@
             (decodedText, decodedResult) => {
                 currentDetectedCode = decodedText;
                 
-                // [V3.7] 呼叫智能 L 型括號繪製
+                // [V3.8] 呼叫智能 L 型括號繪製
                 if (decodedResult && decodedResult.result && decodedResult.result.points) {
                     drawDetectedCorners(decodedResult.result.points);
                 }
