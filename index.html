@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V2.2 - 精確尺寸版)</title>
+    <title>QR Code 智慧系統 (V2.3 - 高畫質輸出版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -356,7 +356,7 @@
         }
     }
 
-    // --- 4. 掃描邏輯 (V2.0/V2.1 邏輯相同) ---
+    // --- 4. 掃描邏輯 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -510,6 +510,39 @@
         });
     }
 
+    // --- 高畫質 QR 生成函式 (V2.3) ---
+    function generateHighResQR(text) {
+        return new Promise((resolve) => {
+            const tempDiv = document.createElement('div');
+            const size = 512; // High Resolution
+            try {
+                new QRCode(tempDiv, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                
+                setTimeout(async () => {
+                    let canvas = tempDiv.querySelector('canvas');
+                    if (canvas) {
+                        if (centerLogoData) {
+                            let composite = await generateCompositeCanvas(canvas, centerLogoData);
+                            resolve(composite.toDataURL('image/png'));
+                        } else {
+                            resolve(canvas.toDataURL('image/png'));
+                        }
+                    } else {
+                        let img = tempDiv.querySelector('img');
+                        resolve(img ? img.src : null);
+                    }
+                }, 50);
+            } catch(e) { resolve(null); }
+        });
+    }
+
     async function downloadImages() {
         const size = parseInt(document.getElementById('export-img-size').value) || 236;
         const zip = new JSZip();
@@ -522,6 +555,9 @@
             const container = document.getElementById('code-img-' + i);
             if (val !== "") {
                 let dataUrl = null;
+                // 用戶自訂圖片(如果有) or 標準QR
+                // 此版本格位無上傳按鈕，但若用 V2.1 匯入可能會殘留標記，這裡統一用 generateHighResQR 處理標準文字
+                // 若未來加回上傳功能，需在此判斷 dataset.customImg
                 let tempContainer = document.createElement('div');
                 try {
                     new QRCode(tempContainer, {
@@ -559,7 +595,7 @@
         }
     }
 
-    // --- 6. Excel 匯出 (4欄位版) ---
+    // --- 6. Excel 匯出 (4欄位版 V2.3) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -611,6 +647,7 @@
             worksheet.getRow(spcRow).height = appConfig.excelSpacerRowHeight;
         }
 
+        // 使用 for loop + await 逐一生成高畫質圖片
         for (let i = 1; i <= appConfig.gridCount; i++) {
             if (i > layoutMap.length) break;
             const pos = layoutMap[i-1];
@@ -622,18 +659,8 @@
             let val = inputEl.value.trim();
 
             if (val !== "") {
-                let containerDiv = document.getElementById('code-img-' + i);
-                let canvasObj = containerDiv.querySelector('canvas');
-                let imgObj = containerDiv.querySelector('img');
-                let base64Image = null;
-
-                if (canvasObj && centerLogoData) {
-                     let composite = await generateCompositeCanvas(canvasObj, centerLogoData);
-                     base64Image = composite.toDataURL('image/png');
-                } else {
-                    if (canvasObj) base64Image = canvasObj.toDataURL('image/png');
-                    else if (imgObj && imgObj.src) base64Image = imgObj.src;
-                }
+                // V2.3: 改用 generateHighResQR 產生高畫質圖片 (512x512)
+                let base64Image = await generateHighResQR(val);
 
                 if (base64Image) {
                     const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
@@ -647,7 +674,6 @@
                 let textCell = worksheet.getCell(textRowNumber, excelColIndex);
                 textCell.value = val;
                 textCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; 
-                // V1.9: Font Size 5
                 textCell.font = { size: 5, bold: true, name: 'Arial' };
                 let imgCell = worksheet.getCell(imgRowNumber, excelColIndex);
                 imgCell.border = { top: {style:'medium'}, left: {style:'medium'}, right: {style:'medium'}, bottom: {style:'none'} };
