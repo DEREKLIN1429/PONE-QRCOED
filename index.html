@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V3.5 - 智能鎖定版)</title>
+    <title>QR Code 智慧系統 (V3.6 - L型括號鎖定版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -43,7 +43,7 @@
         }
         #reader { width: 100%; border: 4px solid #333; border-radius: 8px; background: #000; min-height: 250px; }
         
-        /* [V3.5] 動態追蹤畫布 - 設為最高層級 */
+        /* [V3.6] 動態追蹤畫布 - 設為最高層級 */
         #qr-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -554,7 +554,7 @@
         }
     }
 
-    // --- [V3.5] 掃描邏輯 & 智能四角鎖定 ---
+    // --- [V3.6] 掃描邏輯 & 智能 L 型鎖定 ---
     function initCameraWrapper() {
         const wrapper = document.getElementById('camera-wrapper');
         const hint = document.getElementById('cam-hint-text');
@@ -577,7 +577,7 @@
         }
     }
 
-    // [新增] V3.5 智能四角框繪製
+    // [新增] V3.6 繪製四角 L 型括號 (Bracket Style)
     function drawDetectedCorners(points) {
         const canvas = document.getElementById('qr-canvas');
         const video = document.querySelector('#reader video');
@@ -594,56 +594,45 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // 設定樣式
-        ctx.lineWidth = 5;
+        // 設定樣式 (亮綠色, 加粗, 圓角端點)
+        ctx.lineWidth = 6;
         ctx.strokeStyle = "#00ff00"; 
         ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
         // 將點轉換為畫布座標
         const p = points.map(pt => ({ x: pt.x * scaleX, y: pt.y * scaleY }));
 
-        // 繪製半透明背景，增強鎖定感
-        ctx.beginPath();
-        ctx.moveTo(p[0].x, p[0].y);
-        ctx.lineTo(p[1].x, p[1].y);
-        ctx.lineTo(p[2].x, p[2].y);
-        ctx.lineTo(p[3].x, p[3].y);
-        ctx.closePath();
-        ctx.fillStyle = "rgba(0, 255, 0, 0.15)";
-        ctx.fill();
+        // 定義 L 型括號的臂長 (固定像素值，模擬約 2CM 的視覺效果)
+        const bracketLen = 50; 
 
-        // 繪製四個角落 (L型)
-        const cornerLen = 25; // 角落線條長度
+        ctx.beginPath();
 
         for (let i = 0; i < 4; i++) {
             const curr = p[i];
+            // 找出相鄰的兩個頂點
             const prev = p[(i - 1 + 4) % 4];
             const next = p[(i + 1) % 4];
 
             // 計算向量方向並正規化
-            const getVector = (p1, p2) => {
-                const dx = p2.x - p1.x;
-                const dy = p2.y - p1.y;
-                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-                return { x: dx/dist, y: dy/dist, dist: dist };
+            const getNormalizedVector = (pFrom, pTo) => {
+                let dx = pTo.x - pFrom.x;
+                let dy = pTo.y - pFrom.y;
+                const len = Math.sqrt(dx*dx + dy*dy) || 1; // 避免除以零
+                return { x: dx / len, y: dy / len };
             };
 
-            const vecPrev = getVector(curr, prev);
-            const vecNext = getVector(curr, next);
+            const vecPrev = getNormalizedVector(curr, prev);
+            const vecNext = getNormalizedVector(curr, next);
 
-            // 確保線條不超過邊長的一半
-            const actualLenPrev = Math.min(cornerLen, vecPrev.dist / 2);
-            const actualLenNext = Math.min(cornerLen, vecNext.dist / 2);
-
-            ctx.beginPath();
-            // 畫向上一點的線段
-            ctx.moveTo(curr.x + vecPrev.x * actualLenPrev, curr.y + vecPrev.y * actualLenPrev);
-            // 畫向頂點
+            // 繪製 L 型的兩條臂
+            // 臂 1：指向前一個點
+            ctx.moveTo(curr.x + vecPrev.x * bracketLen, curr.y + vecPrev.y * bracketLen);
             ctx.lineTo(curr.x, curr.y);
-            // 畫向下一點的線段
-            ctx.lineTo(curr.x + vecNext.x * actualLenNext, curr.y + vecNext.y * actualLenNext);
-            ctx.stroke();
+            // 臂 2：指向下一個點
+            ctx.lineTo(curr.x + vecNext.x * bracketLen, curr.y + vecNext.y * bracketLen);
         }
+        ctx.stroke();
     }
     
     function clearCanvas() {
@@ -667,13 +656,13 @@
             html5QrCode = new Html5Qrcode("reader");
         }
 
-        const config = { fps: 15, qrbox: { width: 250, height: 250 } }; // 提高 FPS 到 15 讓框更流暢
+        const config = { fps: 15, qrbox: { width: 250, height: 250 } }; 
         
         html5QrCode.start({ facingMode: "environment" }, config, 
             (decodedText, decodedResult) => {
                 currentDetectedCode = decodedText;
                 
-                // [V3.5] 呼叫智能四角繪製
+                // [V3.6] 呼叫智能 L 型括號繪製
                 if (decodedResult && decodedResult.result && decodedResult.result.points) {
                     drawDetectedCorners(decodedResult.result.points);
                 }
@@ -682,7 +671,7 @@
                 hint.style.color = "#ffff00"; 
             },
             (errorMessage) => { 
-                // 掃描中未偵測到時，可以清空畫布，避免框框卡住
+                // 掃描中未偵測到時，可以清空畫布
                 // clearCanvas();
             }
         ).then(() => {
