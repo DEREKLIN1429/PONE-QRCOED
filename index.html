@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 智慧系統 (V1.31 - 修正版)</title>
+    <title>QR Code 智慧系統 (V1.32 - XML修復版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -489,7 +489,7 @@
         }
     }
 
-    // --- Excel 匯出邏輯 (修正版: 解決 XML 錯誤) ---
+    // --- Excel 匯出邏輯 (完全修復版：移除 editAs 以避免 XML 衝突) ---
     async function exportExcelWithImages() {
         const t = translations[appConfig.currentLang] || translations["en-US"];
         let hasData = false;
@@ -564,10 +564,10 @@
 
                     if (base64Image) {
                         const imageId = workbook.addImage({ base64: base64Image, extension: 'png' });
+                        // 重要修正：移除 editAs 屬性，讓 ExcelJS 自動根據 tl 和 br 建立 TwoCell Anchor
                         worksheet.addImage(imageId, {
                             tl: { col: excelColIndex - 1, row: imgRowNumber - 1 }, 
-                            br: { col: excelColIndex, row: imgRowNumber },          
-                            editAs: 'oneCell' // 修正點：改回 oneCell 以避免 XML 結構錯誤
+                            br: { col: excelColIndex, row: imgRowNumber }
                         });
                     }
                 } catch(e) { console.log(e); }
